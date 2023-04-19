@@ -8,8 +8,8 @@ namespace Sqliste.Core.Utils.SqlAnnotations;
 public static class SqlAnnotationParser
 {
     private const string SqlAnnotationPattern = @"#(?<Annotation>\w+)\s*(\((?<Content>.*)\))?";
-    private const string SequencedParametersPattern = @"\s*(?<Value>""(\\""|[^""])+""+|(\d|\.)+)(\s|,)*";
-    private const string NamedParametersPattern = @"\s*(?<Name>\w+)\s*=\s*(?<Value>""(\\""|[^""])+""+|(\d|\.)+)(\s|,)*";
+    private const string SequencedParametersPattern = @"\s*(?<Value>""(\\""|[^""])+""+|(true|false|(\d|\.)+))(\s|,)*";
+    private const string NamedParametersPattern = @"\s*(?<Name>\w+)\s*=\s*(?<Value>""(\\""|[^""])+""+|(true|false|(\d|\.)+))(\s|,)*";
 
     private static readonly Dictionary<string, Type> _annotationsByName = new();
 
@@ -114,6 +114,12 @@ public static class SqlAnnotationParser
 
         if (trimmed.StartsWith("\""))
             return trimmed.Trim('"');
+
+        if (trimmed == "true")
+            return true;
+
+        if (trimmed == "false")
+            return false;
 
         try
         {
