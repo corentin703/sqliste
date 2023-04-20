@@ -7,14 +7,16 @@ namespace Core.UnitTests.Utils.SqlAnnotations;
 public class SqlAnnotationsParserTests
 {
     [Theory]
-    [InlineData("#Route")]
-    [InlineData("#Route(\"/test\")")]
+    [InlineData("#Route", 1)]
+    [InlineData("#Route(\"/test\")", 1)]
+    [InlineData("#Route(\"/test\") \n #Route(\"/test\")", 2)]
+    [InlineData("-- Some comments \n -- #Route(\"/test\") \n -- #Route(\"/test\")", 2)]
     //[InlineData("#Route( \"/te\\\"st\", \"ss\")")]
-    public void TestInstantiation(string input)
+    public void TestInstantiation(string input, int length)
     {
         List<ISqlAnnotation> annotations = SqlAnnotationParser.ParseSqlString(input);
         Assert.NotNull(annotations);
-        Assert.Equal(1, annotations.Count);
+        Assert.Equal(length, annotations.Count);
         Assert.IsType<RouteSqlAnnotation>(annotations[0]);
     }
 

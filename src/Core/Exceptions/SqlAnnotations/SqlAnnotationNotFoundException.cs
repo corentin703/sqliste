@@ -1,8 +1,8 @@
-﻿namespace Sqliste.Core.SqlAnnotations.SqlAnnotations;
+﻿namespace Sqliste.Core.Exceptions.SqlAnnotations;
 
 public class SqlAnnotationNotFoundException : InvalidOperationException
 {
-    public SqlAnnotationNotFoundException(string annotationName) 
+    public SqlAnnotationNotFoundException(string annotationName)
         : base($"{annotationName} doesn't exists")
     {
         //

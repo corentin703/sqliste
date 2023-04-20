@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using System.Text.RegularExpressions;
 using Sqliste.Core.Contracts;
-using Sqliste.Core.SqlAnnotations.SqlAnnotations;
+using Sqliste.Core.Exceptions.SqlAnnotations;
 
 namespace Sqliste.Core.Utils.SqlAnnotations;
 
@@ -84,6 +84,9 @@ public static class SqlAnnotationParser
         MatchCollection matches = Regex.Matches(content, NamedParametersPattern);
         foreach (Match match in matches)
         {
+            if (!match.Success)
+                continue;
+
             string name = match.Groups["Name"].Value.Trim();
             string value = match.Groups["Value"].Value.Trim();
 
@@ -100,6 +103,9 @@ public static class SqlAnnotationParser
         MatchCollection matches = Regex.Matches(content, SequencedParametersPattern);
         foreach (Match match in matches)
         {
+            if (!match.Success)
+                continue;
+
             string value = match.Groups["Value"].Value.Trim();
             sequencedParameters.Add(ParseValue(value));
         }

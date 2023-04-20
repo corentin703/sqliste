@@ -1,8 +1,8 @@
-﻿namespace Sqliste.Core.SqlAnnotations.SqlAnnotations;
+﻿namespace Sqliste.Core.Exceptions.SqlAnnotations;
 
 public class SqlAnnotationPropertyNotFoundException : InvalidOperationException
 {
-    public SqlAnnotationPropertyNotFoundException(string? propertyName) 
+    public SqlAnnotationPropertyNotFoundException(string? propertyName)
         : base($"{propertyName} is unknown")
     {
         //

@@ -6,10 +6,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Sqliste.$(MSBuildProjectName)</AssemblyName>
     <RootNamespace>Sqliste.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <UserSecretsId>b0f0fae1-08c0-4d8b-8298-4bd25d5a988a</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\Database\SqlServer\Database.SqlServer\SqlServer.csproj" />
   </ItemGroup>
 
 </Project>
