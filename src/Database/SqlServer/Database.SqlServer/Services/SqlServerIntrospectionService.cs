@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using System.Text.RegularExpressions;
+using Microsoft.Extensions.Caching.Memory;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Sql;
+using Sqliste.Core.SqlAnnotations;
 using Sqliste.Core.Utils.SqlAnnotations;
 using Sqliste.Database.SqlServer.SqlQueries;
 
@@ -30,6 +32,7 @@ public class SqlServerIntrospectionService : IDatabaseIntrospectionService
             {
                 procedure.Annotations = SqlAnnotationParser.ParseSqlString(procedure.Content);
                 await QueryProceduresParamsAsync(procedure, cancellationToken);
+                SetRoutePattern(procedure);
             }
 
             _memoryCache.Set(IntrospectionCacheKey, procedures);
@@ -52,6 +55,21 @@ public class SqlServerIntrospectionService : IDatabaseIntrospectionService
         List<ArgumentModel> procedureArgs = await _databaseService.QueryAsync<ArgumentModel>(query, args, cancellationToken);
 
         procedure.Arguments = procedureArgs;
+
+        return procedure;
+    }
+
+    private ProcedureModel SetRoutePattern(ProcedureModel procedure)
+    {
+        RouteSqlAnnotation? routeAnnotation = procedure.Annotations
+            .FirstOrDefault(annotation => annotation is RouteSqlAnnotation) as RouteSqlAnnotation;
+
+        string route = routeAnnotation == null // TODO : Route must be optional (default to procedure naming based route)
+            ? procedure.Name
+            : routeAnnotation.Path
+        ;
+
+        procedure.RoutePattern = Regex.Replace(route, @"{(?<name>\w+\??)}", @"\w+");
 
         return procedure;
     }

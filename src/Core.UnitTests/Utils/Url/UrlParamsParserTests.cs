@@ -5,7 +5,6 @@ namespace Core.UnitTests.Utils.Url;
 
 public class UrlParamsParserTests
 {
-
     [Fact]
     public void ExtractSingleParamsTest()
     {

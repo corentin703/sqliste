@@ -1,3 +1,5 @@
+using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Services;
 using Sqliste.Database.SqlServer.Extensions.ServiceCollection;
 using Sqliste.Server.Middlewares;
 
@@ -17,6 +19,7 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddSqlServer(builder.Configuration);
+        builder.Services.AddScoped<IRequestHandlerService, RequestHandlerService>();
 
         var app = builder.Build();
 

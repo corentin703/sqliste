@@ -1,5 +1,11 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
+using System.Net.Mime;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Models.Requests;
+using Sqliste.Core.Models.Response;
 
 namespace Sqliste.Server.Middlewares;
 
@@ -27,6 +33,33 @@ public class DatabaseMiddleware
             return;
         }
 
-        await _next(context);
+        IRequestHandlerService requestHandlerService = context.RequestServices.GetRequiredService<IRequestHandlerService>();
+        HttpRequestModel request = new HttpRequestModel()
+        {
+            Path = context.Request.Path,
+            Method = GetHttpMethodFromString(context.Request.Method),
+        };
+
+        HttpResponseModel response = await requestHandlerService.HandleRequestAsync(request);
+
+        context.Response.ContentType = MediaTypeNames.Application.Json;
+        context.Response.StatusCode = (int)response.Status;
+        string result = JsonSerializer.Serialize(response);
+        await context.Response.WriteAsync(result);
+
+        //await _next(context);
+    }
+
+    private HttpMethod GetHttpMethodFromString(string method)
+    {
+        return method switch
+        {
+            "GET" => HttpMethod.Get,
+            "POST" => HttpMethod.Post,
+            "PATCH" => HttpMethod.Patch,
+            "PUT" => HttpMethod.Put,
+            "DELETE" => HttpMethod.Delete,
+            _ => HttpMethod.Get
+        };
     }
 }
