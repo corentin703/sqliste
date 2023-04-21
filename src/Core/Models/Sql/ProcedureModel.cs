@@ -1,6 +1,6 @@
 ﻿using Sqliste.Core.Contracts;
 
-namespace Sqliste.Core.Models;
+namespace Sqliste.Core.Models.Sql;
 
 public class ProcedureModel
 {

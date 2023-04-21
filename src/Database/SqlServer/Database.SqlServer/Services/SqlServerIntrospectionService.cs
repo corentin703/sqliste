@@ -1,5 +1,6 @@
-﻿using Sqliste.Core.Contracts.Services;
-using Sqliste.Core.Models;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Models.Sql;
 using Sqliste.Core.Utils.SqlAnnotations;
 using Sqliste.Database.SqlServer.SqlQueries;
 
@@ -8,21 +9,32 @@ namespace Sqliste.Database.SqlServer.Services;
 public class SqlServerIntrospectionService : IDatabaseIntrospectionService
 {
     private readonly IDatabaseService _databaseService;
+    private readonly IMemoryCache _memoryCache;
 
-    public SqlServerIntrospectionService(IDatabaseService databaseService)
+    private const string IntrospectionCacheKey = "DatabaseIntrospection";
+
+    public SqlServerIntrospectionService(IDatabaseService databaseService, IMemoryCache memoryCache)
     {
         _databaseService = databaseService;
+        _memoryCache = memoryCache;
     }
 
     public async Task<List<ProcedureModel>> IntrospectAsync(CancellationToken cancellationToken = default)
     {
-        List<ProcedureModel> procedures = await QueryProceduresAsync(cancellationToken);
-        foreach (ProcedureModel procedure in procedures)
-        {
-            procedure.Annotations = SqlAnnotationParser.ParseSqlString(procedure.Content);
-            await QueryProceduresParamsAsync(procedure, cancellationToken);
-        }
+        List<ProcedureModel>? procedures;
 
+        if (!_memoryCache.TryGetValue(IntrospectionCacheKey, out procedures) || procedures == null)
+        {
+            procedures = await QueryProceduresAsync(cancellationToken);
+            foreach (ProcedureModel procedure in procedures)
+            {
+                procedure.Annotations = SqlAnnotationParser.ParseSqlString(procedure.Content);
+                await QueryProceduresParamsAsync(procedure, cancellationToken);
+            }
+
+            _memoryCache.Set(IntrospectionCacheKey, procedures);
+        }
+       
         return procedures;
     }
 

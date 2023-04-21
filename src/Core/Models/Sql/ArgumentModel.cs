@@ -1,4 +1,4 @@
-﻿namespace Sqliste.Core.Models;
+﻿namespace Sqliste.Core.Models.Sql;
 
 public class ArgumentModel
 {

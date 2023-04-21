@@ -1,4 +1,5 @@
 using Sqliste.Database.SqlServer.Extensions.ServiceCollection;
+using Sqliste.Server.Middlewares;
 
 namespace Sqliste.Server;
 
@@ -10,6 +11,8 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddControllers();
+        builder.Services.AddMemoryCache();
+
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
@@ -28,7 +31,7 @@ public class Program
 
         app.UseAuthorization();
 
-
+        app.UseMiddleware<DatabaseMiddleware>();
         app.MapControllers();
 
         app.Run();

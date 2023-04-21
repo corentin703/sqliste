@@ -11,7 +11,7 @@ public static class SqlAnnotationParser
     private const string SequencedParametersPattern = @"\s*(?<Value>""(\\""|[^""])+""+|(true|false|(\d|\.)+))(\s|,)*";
     private const string NamedParametersPattern = @"\s*(?<Name>\w+)\s*=\s*(?<Value>""(\\""|[^""])+""+|(true|false|(\d|\.)+))(\s|,)*";
 
-    private static readonly Dictionary<string, Type> _annotationsByName = new();
+    private static readonly Dictionary<string, Type> AnnotationsByName = new();
 
     public static List<ISqlAnnotation> ParseSqlString(string sqlContent)
     {
@@ -42,10 +42,10 @@ public static class SqlAnnotationParser
     {
         ISqlAnnotation? annotation = null;
 
-        if (!_annotationsByName.ContainsKey(annotationName))
+        if (!AnnotationsByName.ContainsKey(annotationName))
             throw new SqlAnnotationNotFoundException(annotationName);
 
-        Type annotationType = _annotationsByName[annotationName];
+        Type annotationType = AnnotationsByName[annotationName];
 
         if (!Regex.IsMatch(content, NamedParametersPattern))
         {
@@ -145,7 +145,7 @@ public static class SqlAnnotationParser
 
     private static void EnsureAnnotationIndexInitialized()
     {
-        if (_annotationsByName.Count > 0) 
+        if (AnnotationsByName.Count > 0) 
             return;
 
         Type annotationInterface = typeof(ISqlAnnotation);
@@ -156,7 +156,7 @@ public static class SqlAnnotationParser
         annotationTypes.ForEach(type =>
         {
             string name = type.Name.Replace("SqlAnnotation", "");
-            _annotationsByName[name] = type;
+            AnnotationsByName[name] = type;
         });
     }
 }

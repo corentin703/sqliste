@@ -1,4 +1,4 @@
-﻿using Sqliste.Core.Models;
+﻿using Sqliste.Core.Models.Sql;
 
 namespace Sqliste.Core.Contracts.Services;
 
