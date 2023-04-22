@@ -1,9 +1,8 @@
-﻿using Sqliste.Core.Exceptions.Url;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
-namespace Sqliste.Core.Utils.Url;
+namespace Sqliste.Core.Utils.Uri;
 
-public static class UrlParamsParser
+public static class UriParamsParser
 {
     private const string TemplateParamPattern = @"{(?<name>\w+\??)}";
 

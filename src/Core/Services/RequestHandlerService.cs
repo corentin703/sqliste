@@ -1,10 +1,11 @@
-﻿using System.Net;
-using System.Text.RegularExpressions;
-using Sqliste.Core.Contracts.Services;
-using Sqliste.Core.Models.Requests;
-using Sqliste.Core.Models.Response;
+﻿using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Sql;
-using Sqliste.Core.SqlAnnotations;
+using Sqliste.Core.SqlAnnotations.HttpMethods;
+using System.Net;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using Sqliste.Core.Utils.Uri;
 
 namespace Sqliste.Core.Services;
 
@@ -23,12 +24,21 @@ public class RequestHandlerService : IRequestHandlerService
     {
         List<ProcedureModel> routes = await _databaseIntrospectionService.IntrospectAsync(cancellationToken);
 
-        ProcedureModel? procedure = routes.FirstOrDefault(route => IsMatchingRoute(request, route));
+        ProcedureModel? procedure = routes
+            .FirstOrDefault(route => IsMatchingRoute(request, route) && IsMatchingVerb(request, route));
 
         if (procedure == null)
-            throw new NotImplementedException();
+        {
+            return new HttpResponseModel()
+            {
+                Status = HttpStatusCode.NotFound,
+            };
+        }
 
-        var result = await _databaseService.QueryAsync($"EXEC {procedure.Schema}.{procedure.Name}", new { }, cancellationToken);
+        Dictionary<string, object?> sqlParams = GetParams(request, procedure);
+
+        List<IDictionary<string, object>>? result = 
+            await _databaseService.QueryAsync($"EXEC {procedure.Schema}.{procedure.Name}", sqlParams, cancellationToken);
 
         return new HttpResponseModel()
         {
@@ -37,15 +47,85 @@ public class RequestHandlerService : IRequestHandlerService
         };
     }
 
+    private Dictionary<string, object?> GetParams(HttpRequestModel request, ProcedureModel procedure)
+    {
+        Dictionary<string, object?> queryParams = new Dictionary<string, object?>();
+        Dictionary<string, string> uriParams = ParseUriParams(request.Path, procedure);
+
+        foreach (KeyValuePair<string, string> uriParam in uriParams)
+        {
+            AddParams(queryParams, procedure.Arguments, uriParam.Key, uriParam.Value);
+        }
+
+        AddParams(queryParams, procedure.Arguments, "body", request.Body);
+        AddParams(queryParams, procedure.Arguments, "cookies", JsonSerializer.Serialize(request.Cookies));
+        AddParams(queryParams, procedure.Arguments, "headers", JsonSerializer.Serialize(request.Headers));
+
+        return queryParams;
+    }
+
+    private void AddParams(
+        Dictionary<string, object?> paramsBag, 
+        List<ArgumentModel> procedureArgs, 
+        string paramName,
+        object? paramValue
+    )
+    {
+        if (procedureArgs.Any(argument => argument.Name == paramName)) 
+            paramsBag.TryAdd(paramName, paramValue);
+    }
+
     private bool IsMatchingRoute(HttpRequestModel request, ProcedureModel procedure)
     {
-        //RouteSqlAnnotation? routeAnnotation = procedure.Annotations
-        //    .FirstOrDefault(annotation => annotation is RouteSqlAnnotation) as RouteSqlAnnotation;
+        return Regex.IsMatch(UriPathParser.ExtractUriPath(request.Path), procedure.RoutePattern);
+    }
 
-        //if (routeAnnotation == null) 
-        //    return false; // TODO : Route must be optional (default to procedure naming based route)
+    private bool IsMatchingVerb(HttpRequestModel request, ProcedureModel procedure)
+    {
+        List<HttpMethodBaseSqlAnnotation> methodAnnotations = procedure.Annotations
+            .Where(annotation => annotation is HttpMethodBaseSqlAnnotation)
+            .Cast<HttpMethodBaseSqlAnnotation>()
+            .ToList();
 
+        if (methodAnnotations.Count == 0)
+            return true;
 
-        return Regex.IsMatch(request.Path, procedure.RoutePattern);
+        if (request.Method == HttpMethod.Get && methodAnnotations.Any(annotation => annotation is HttpGetSqlAnnotation))
+            return true;
+
+        if (request.Method == HttpMethod.Post && methodAnnotations.Any(annotation => annotation is HttpPostSqlAnnotation))
+            return true;
+
+        if (request.Method == HttpMethod.Put && methodAnnotations.Any(annotation => annotation is HttpPutSqlAnnotation))
+            return true;
+
+        if (request.Method == HttpMethod.Patch && methodAnnotations.Any(annotation => annotation is HttpPatchSqlAnnotation))
+            return true;
+
+        if (request.Method == HttpMethod.Delete && methodAnnotations.Any(annotation => annotation is HttpDeleteSqlAnnotation))
+            return true;
+
+        return false;
+    }
+
+    private Dictionary<string, string> ParseUriParams(string uri, ProcedureModel procedure)
+    {
+        Dictionary<string, string> routeParams = new();
+
+        Match paramsMatch = Regex.Match(uri, procedure.RoutePattern);
+
+        if (!paramsMatch.Success) 
+            return routeParams;
+
+        procedure.RouteParamNames.ForEach(paramName =>
+        {
+            string paramValue = paramsMatch.Groups[paramName].Value;
+            if (string.IsNullOrEmpty(paramValue))
+                return;
+
+            routeParams.Add(paramName, paramValue);
+        });
+
+        return routeParams;
     }
 }

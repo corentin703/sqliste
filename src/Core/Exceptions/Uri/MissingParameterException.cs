@@ -1,4 +1,4 @@
-﻿namespace Sqliste.Core.Exceptions.Url;
+﻿namespace Sqliste.Core.Exceptions.Uri;
 
 public class MissingParameterException : InvalidOperationException
 {

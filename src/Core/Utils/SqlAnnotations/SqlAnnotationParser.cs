@@ -113,7 +113,6 @@ public static class SqlAnnotationParser
         return sequencedParameters;
     }
 
-
     private static object ParseValue(string value, string? propertyName = null)
     {
         string trimmed = value.Trim();
@@ -150,7 +149,7 @@ public static class SqlAnnotationParser
 
         Type annotationInterface = typeof(ISqlAnnotation);
         List<Type> annotationTypes = annotationInterface.Assembly.GetExportedTypes()
-            .Where(type => type.FullName != annotationInterface.FullName && type.IsAssignableTo(annotationInterface))
+            .Where(type => !type.IsAbstract && type.IsAssignableTo(annotationInterface))
             .ToList();
 
         annotationTypes.ForEach(type =>

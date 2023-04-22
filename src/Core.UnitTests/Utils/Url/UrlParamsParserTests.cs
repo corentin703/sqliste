@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using Sqliste.Core.Utils.Url;
+using Sqliste.Core.Utils.Uri;
 
 namespace Core.UnitTests.Utils.Url;
 
@@ -11,7 +11,7 @@ public class UrlParamsParserTests
         string uri = "/test/15";
         string template = "/test/{number}";
 
-        Dictionary<string, string> urlParams = UrlParamsParser.ParseUrlParams(template, uri);
+        Dictionary<string, string> urlParams = UriParamsParser.ParseUrlParams(template, uri);
         urlParams.Should()
             .NotBeNull()
             .And
@@ -28,7 +28,7 @@ public class UrlParamsParserTests
         string uri = "/test/15/superAction";
         string template = "/test/{number}/{action}";
 
-        Dictionary<string, string> urlParams = UrlParamsParser.ParseUrlParams(template, uri);
+        Dictionary<string, string> urlParams = UriParamsParser.ParseUrlParams(template, uri);
         urlParams.Should()
             .NotBeNull()
             .And
@@ -49,7 +49,7 @@ public class UrlParamsParserTests
         string uri = "/test/15";
         string template = "/test/{number}/{action?}";
 
-        Dictionary<string, string> urlParams = UrlParamsParser.ParseUrlParams(template, uri);
+        Dictionary<string, string> urlParams = UriParamsParser.ParseUrlParams(template, uri);
         urlParams.Should()
             .NotBeNull()
             .And
@@ -60,7 +60,7 @@ public class UrlParamsParserTests
         numberParam.Should().Be("15");
 
         uri = "/test/15/superAction";
-        urlParams = UrlParamsParser.ParseUrlParams(template, uri);
+        urlParams = UriParamsParser.ParseUrlParams(template, uri);
         urlParams.Should()
             .NotBeNull()
             .And

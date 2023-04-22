@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Sqliste.Core.Models.Response;
+namespace Sqliste.Core.Models.Http;
 
 public class HttpResponseModel
 {

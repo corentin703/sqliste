@@ -1,5 +1,4 @@
-﻿using Sqliste.Core.Models.Requests;
-using Sqliste.Core.Models.Response;
+﻿using Sqliste.Core.Models.Http;
 
 namespace Sqliste.Core.Contracts.Services;
 

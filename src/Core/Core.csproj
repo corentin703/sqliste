@@ -9,9 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Exceptions\Url\" />
-    <Folder Include="Models\Response\" />
-    <Folder Include="Models\Requests\" />
+    <Folder Include="Exceptions\Procedures\" />
+    <Folder Include="Exceptions\Uri\" />
     <Folder Include="Services\" />
     <Folder Include="Utils\SqlAnnotations\" />
   </ItemGroup>

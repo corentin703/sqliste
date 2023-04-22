@@ -11,4 +11,5 @@ public class ProcedureModel
     public List<ArgumentModel> Arguments { get; set; } = new();
 
     public List<ISqlAnnotation> Annotations { get; set; } = new();
+    public List<string> RouteParamNames { get; set; } = new();
 }
