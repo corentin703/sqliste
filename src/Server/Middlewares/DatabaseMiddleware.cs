@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc.Infrastructure;
+﻿using System.Net;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Http;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Net.Http.Headers;
+using Microsoft.AspNetCore.Http;
 
 namespace Sqliste.Server.Middlewares;
 
@@ -35,7 +38,7 @@ public class DatabaseMiddleware
 
         IRequestHandlerService requestHandlerService = context.RequestServices.GetRequiredService<IRequestHandlerService>();
 
-        string? bodyContent = await ParseRequestBodyAsync(context);
+        string? bodyContent = await ParseRequestBodyAsync(context, context.RequestAborted);
 
         HttpRequestModel request = new HttpRequestModel()
         {
@@ -46,15 +49,8 @@ public class DatabaseMiddleware
             Headers = context.Request.Headers.ToDictionary(header => header.Key, header => header.Value.ToString()),
         };
 
-        HttpResponseModel response = await requestHandlerService.HandleRequestAsync(request);
-
-        context.Response.StatusCode = (int)response.Status;
-        if (response.Data != null)
-        {
-            context.Response.ContentType = MediaTypeNames.Application.Json;
-            string result = JsonSerializer.Serialize(response.Data);
-            await context.Response.WriteAsync(result);
-        }
+        HttpResponseModel response = await requestHandlerService.HandleRequestAsync(request, context.RequestAborted);
+        await ApplyResponseAsync(context, response, context.RequestAborted);
 
         //await _next(context);
     }
@@ -97,5 +93,55 @@ public class DatabaseMiddleware
             _logger.LogError(exception.ToString());
             return null;
         }
+    }
+
+    private async Task ApplyResponseAsync(
+        HttpContext context, 
+        HttpResponseModel response,
+        CancellationToken cancellationToken = default
+    )
+    {
+        foreach (KeyValuePair<string, string> header in response.Headers)
+        {
+            context.Response.Headers[header.Key] = header.Value;
+        }
+
+        string? serializedResponseBody = SerializeResponseBody(response);
+
+        if (response.Status == null)
+        {
+            context.Response.StatusCode = serializedResponseBody == null 
+                ? (int)HttpStatusCode.NoContent 
+                : (int)HttpStatusCode.OK
+            ;
+        } 
+        else 
+            context.Response.StatusCode = (int)response.Status;
+
+        if (serializedResponseBody != null) 
+            await context.Response.WriteAsync(serializedResponseBody, cancellationToken: cancellationToken);
+    }
+
+    private string? SerializeResponseBody(HttpResponseModel response)
+    {
+        if (!response.Headers.ContainsKey(HeaderNames.ContentType))
+        {
+            response.Headers[HeaderNames.ContentType] = MediaTypeNames.Text.Plain;
+            return response.Body?.ToString();
+        }
+
+        if (response.Headers[HeaderNames.ContentType] == MediaTypeNames.Application.Json)
+        {
+            try
+            {
+                return JsonSerializer.Serialize(response.Body);
+            }
+            catch
+            {
+                return response.Body?.ToString(); 
+            }
+        }
+
+        return response.Body?.ToString();
     }
 }
