@@ -19,7 +19,6 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddSqlServer(builder.Configuration);
-        builder.Services.AddScoped<IRequestHandlerService, RequestHandlerService>();
 
         var app = builder.Build();
 

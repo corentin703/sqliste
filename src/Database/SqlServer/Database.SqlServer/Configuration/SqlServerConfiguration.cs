@@ -4,5 +4,5 @@ namespace Sqliste.Database.SqlServer.Configuration;
 
 public class SqlServerConfiguration : DatabaseConfiguration
 {
-    
+    //
 }

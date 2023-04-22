@@ -14,6 +14,7 @@ public static class AddSqlServerExtensions
 
         services.AddScoped<IDatabaseService, SqlServerDatabaseService>();
         services.AddScoped<IDatabaseIntrospectionService, SqlServerIntrospectionService>();
+        services.AddScoped<IRequestHandlerService, SqlServerRequestHandlerService>();
 
         return services;
     }
