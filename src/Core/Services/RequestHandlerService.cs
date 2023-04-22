@@ -1,7 +1,6 @@
 ﻿using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Sql;
-using Sqliste.Core.SqlAnnotations.HttpMethods;
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -82,30 +81,7 @@ public class RequestHandlerService : IRequestHandlerService
 
     private bool IsMatchingVerb(HttpRequestModel request, ProcedureModel procedure)
     {
-        List<HttpMethodBaseSqlAnnotation> methodAnnotations = procedure.Annotations
-            .Where(annotation => annotation is HttpMethodBaseSqlAnnotation)
-            .Cast<HttpMethodBaseSqlAnnotation>()
-            .ToList();
-
-        if (methodAnnotations.Count == 0)
-            return true;
-
-        if (request.Method == HttpMethod.Get && methodAnnotations.Any(annotation => annotation is HttpGetSqlAnnotation))
-            return true;
-
-        if (request.Method == HttpMethod.Post && methodAnnotations.Any(annotation => annotation is HttpPostSqlAnnotation))
-            return true;
-
-        if (request.Method == HttpMethod.Put && methodAnnotations.Any(annotation => annotation is HttpPutSqlAnnotation))
-            return true;
-
-        if (request.Method == HttpMethod.Patch && methodAnnotations.Any(annotation => annotation is HttpPatchSqlAnnotation))
-            return true;
-
-        if (request.Method == HttpMethod.Delete && methodAnnotations.Any(annotation => annotation is HttpDeleteSqlAnnotation))
-            return true;
-
-        return false;
+        return procedure.HttpMethods.Any(method => method == request.Method);
     }
 
     private Dictionary<string, string> ParseUriParams(string uri, ProcedureModel procedure)
