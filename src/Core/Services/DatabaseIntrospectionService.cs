@@ -58,6 +58,11 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
         return procedures;
     }
 
+    public void Clear()
+    {
+        MemoryCache.Remove(IntrospectionCacheKey);
+    }
+
     protected abstract Task<List<ProcedureModel>> QueryProceduresAsync(CancellationToken cancellationToken = default);
 
     protected abstract Task<List<ArgumentModel>> QueryProceduresParamsAsync(string procedureName, CancellationToken cancellationToken = default);

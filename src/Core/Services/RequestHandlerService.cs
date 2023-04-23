@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.Utils.Uri;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Microsoft.Net.Http.Headers;
 
 namespace Sqliste.Core.Services;
 
@@ -51,7 +50,7 @@ public abstract class RequestHandlerService : IRequestHandlerService
 
     protected abstract Task<HttpResponseModel> ExecRequestAsync(ProcedureModel procedure, Dictionary<string, object?> sqlParams, CancellationToken cancellationToken);
 
-    protected virtual Dictionary<string, object?> GetParams(HttpRequestModel request, ProcedureModel procedure)
+    private Dictionary<string, object?> GetParams(HttpRequestModel request, ProcedureModel procedure)
     {
         Dictionary<string, object?> sqlParams = new Dictionary<string, object?>();
         Dictionary<string, string> uriParams = ParseUriParams(request.Path, procedure);
@@ -95,7 +94,7 @@ public abstract class RequestHandlerService : IRequestHandlerService
 
     private bool IsMatchingRoute(HttpRequestModel request, ProcedureModel procedure)
     {
-        return Regex.IsMatch(UriPathParser.ExtractUriPath(request.Path), procedure.RoutePattern);
+        return Regex.IsMatch(request.Path, procedure.RoutePattern);
     }
 
     private bool IsMatchingVerb(HttpRequestModel request, ProcedureModel procedure)

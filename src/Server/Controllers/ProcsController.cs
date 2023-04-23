@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Sqliste.Core.Contracts.Services;
 
 namespace Sqliste.Server.Controllers;
@@ -19,5 +18,12 @@ public class ProcsController : ControllerBase
     public async Task<IActionResult> GetAllAsync(CancellationToken cancellationToken)
     {
         return Ok(await _databaseIntrospectionService.IntrospectAsync(cancellationToken));
+    }
+
+    [HttpDelete]
+    public IActionResult Delete()
+    {
+        _databaseIntrospectionService.Clear();
+        return NoContent();
     }
 }
