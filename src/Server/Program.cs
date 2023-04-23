@@ -7,7 +7,7 @@ namespace Sqliste.Server;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +39,17 @@ public class Program
         app.UseMiddleware<DatabaseMiddleware>();
         app.MapControllers();
 
-        app.Run();
+        await using(AsyncServiceScope scope = app.Services.CreateAsyncScope())
+        {
+            IDatabaseMigrationService databaseMigrationService = 
+                scope.ServiceProvider.GetRequiredService<IDatabaseMigrationService>();
+            databaseMigrationService.Migrate();
+
+            IDatabaseIntrospectionService databaseIntrospectionService = 
+                scope.ServiceProvider.GetRequiredService<IDatabaseIntrospectionService>();
+            await databaseIntrospectionService.IntrospectAsync();
+        }
+
+        await app.RunAsync();
     }
 }

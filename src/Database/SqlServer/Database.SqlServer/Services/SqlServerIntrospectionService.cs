@@ -42,7 +42,7 @@ public class SqlServerIntrospectionService : DatabaseIntrospectionService
 
         procedureArgs ??= new List<ArgumentModel>();
 
-        _logger.LogInformation("Queried {number} params for {procedureName}", procedureArgs.Count, procedureName);
+        _logger.LogInformation("Got {number} params for {procedureName}", procedureArgs.Count, procedureName);
 
         return procedureArgs;
     }

@@ -13,6 +13,7 @@ public static class AddSqlServerExtensions
         services.Configure<SqlServerConfiguration>(configuration.GetSection("Database"));
 
         services.AddScoped<IDatabaseService, SqlServerDatabaseService>();
+        services.AddScoped<IDatabaseMigrationService, SqlServerMigrationService>();
         services.AddScoped<IDatabaseIntrospectionService, SqlServerIntrospectionService>();
         services.AddScoped<IRequestHandlerService, SqlServerRequestHandlerService>();
 
