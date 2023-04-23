@@ -41,10 +41,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
             {
                 try
                 {
-                    procedure.Annotations = SqlAnnotationParser.ParseSqlString(procedure.Content);
-                    SetupRoutePattern(procedure);
-                    SetupHttpMethod(procedure);
-                    procedure.Arguments = await QueryProceduresParamsAsync(procedure.Name, cancellationToken);
+                    await IntrospectProcedureAsync(procedure, cancellationToken);
                 }
                 catch (InvalidOperationException exception)
                 {
@@ -64,6 +61,18 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
     protected abstract Task<List<ProcedureModel>> QueryProceduresAsync(CancellationToken cancellationToken = default);
 
     protected abstract Task<List<ArgumentModel>> QueryProceduresParamsAsync(string procedureName, CancellationToken cancellationToken = default);
+
+    protected virtual async Task IntrospectProcedureAsync(
+        ProcedureModel procedure,
+        CancellationToken cancellationToken = default
+    )
+    {
+        procedure.Annotations = SqlAnnotationParser.ParseSqlString(procedure.Content);
+        SetupRoutePattern(procedure);
+        SetupHttpMethod(procedure);
+        SetupContentType(procedure);
+        procedure.Arguments = await QueryProceduresParamsAsync(procedure.Name, cancellationToken);
+    }
 
     private void SetupRoutePattern(ProcedureModel procedure)
     {
@@ -104,7 +113,6 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
         procedure.RoutePattern = @$"^{routePattern}$";
         procedure.RouteParamNames = paramsNames;
     }
-
     private void SetupHttpMethod(ProcedureModel procedure)
     {
         List<HttpMethodBaseSqlAnnotation> methodAnnotations = procedure.Annotations
@@ -130,6 +138,17 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
             httpMethods.Add(HttpMethod.Delete);
 
         procedure.HttpMethods = httpMethods.ToArray();
+    }
+
+    private void SetupContentType(ProcedureModel procedure)
+    {
+        ProducesSqlAnnotation? producesAnnotation = procedure.Annotations
+            .FirstOrDefault(annotation => annotation is ProducesSqlAnnotation) as ProducesSqlAnnotation;
+
+        if (producesAnnotation == null)
+            return;
+
+        procedure.ContentType = producesAnnotation.Mime;
     }
 
     protected virtual (string, HttpMethod[]) GetDefaultRoutePattern(ProcedureModel procedure)

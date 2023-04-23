@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Net.Http.Headers;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.Services;
 using Sqliste.Database.SqlServer.Models;
 using System.Net;
-using System.Net.Mime;
 using System.Text.Json;
 
 namespace Sqliste.Database.SqlServer.Services;
@@ -47,6 +45,7 @@ public class SqlServerRequestHandlerService : RequestHandlerService
         HttpResponseModel response = new()
         {
             Status = rawResponse.Status,
+            Body = rawResponse.Body?.Trim(),
         };
 
         if (!string.IsNullOrEmpty(rawResponse.Headers))
@@ -63,36 +62,6 @@ public class SqlServerRequestHandlerService : RequestHandlerService
             }
         }
 
-        if (rawResponse.Body is string stringBody)
-            response.Body = ParseStringBody(stringBody, response);
-        else 
-            response.Body = rawResponse.Body;
-
         return response;
-    }
-
-    private object ParseStringBody(string stringBody, HttpResponseModel response)
-    {
-        string trimmedBody = stringBody.Trim();
-
-        // If is body is JSON
-        if ((trimmedBody.StartsWith("[") && trimmedBody.EndsWith("]")) || (trimmedBody.StartsWith("{") && trimmedBody.StartsWith("}")))
-        {
-            try
-            {
-                object? parsedJson = JsonSerializer.Deserialize<object>(trimmedBody);
-
-                if (parsedJson != null)
-                    response.Headers.TryAdd(HeaderNames.ContentType, MediaTypeNames.Application.Json);
-
-                return parsedJson ?? stringBody;
-            }
-            catch
-            {
-                return stringBody;
-            }
-        }
-
-        return stringBody;
     }
 }

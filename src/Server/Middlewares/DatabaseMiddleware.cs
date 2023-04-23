@@ -1,12 +1,9 @@
-﻿using System.Net;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
+﻿using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.Net.Http.Headers;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Http;
+using System.Net;
 using System.Net.Mime;
-using System.Text;
-using System.Text.Json;
-using Microsoft.Net.Http.Headers;
-using Microsoft.AspNetCore.Http;
 
 namespace Sqliste.Server.Middlewares;
 
@@ -36,63 +33,13 @@ public class DatabaseMiddleware
             return;
         }
 
+        _logger.LogDebug("Handling request for path {path}", context.Request.Path);
         IRequestHandlerService requestHandlerService = context.RequestServices.GetRequiredService<IRequestHandlerService>();
+        IHttpModelsFactory httpModelsFactory = context.RequestServices.GetRequiredService<IHttpModelsFactory>();
 
-        string? bodyContent = await ParseRequestBodyAsync(context, context.RequestAborted);
-
-        HttpRequestModel request = new HttpRequestModel()
-        {
-            Path = context.Request.Path,
-            Method = GetHttpMethodFromString(context.Request.Method),
-            Body = bodyContent,
-            Cookies = context.Request.Cookies.ToDictionary(cookie => cookie.Key, cookie => cookie.Value),
-            Headers = context.Request.Headers.ToDictionary(header => header.Key, header => header.Value.ToString()),
-        };
-
+        HttpRequestModel request = await httpModelsFactory.BuildRequestModelAsync(context.RequestAborted);
         HttpResponseModel response = await requestHandlerService.HandleRequestAsync(request, context.RequestAborted);
         await ApplyResponseAsync(context, response, context.RequestAborted);
-
-        //await _next(context);
-    }
-
-    private HttpMethod GetHttpMethodFromString(string method)
-    {
-        return method switch
-        {
-            "GET" => HttpMethod.Get,
-            "POST" => HttpMethod.Post,
-            "PATCH" => HttpMethod.Patch,
-            "PUT" => HttpMethod.Put,
-            "DELETE" => HttpMethod.Delete,
-            _ => HttpMethod.Get
-        };
-    }
-
-    private async Task<string?> ParseRequestBodyAsync(HttpContext context, CancellationToken cancellationToken = default)
-    {
-        HttpRequest request = context.Request;
-
-        if (request.Method == HttpMethods.Get || request.Method == HttpMethods.Delete)
-            return null;
-
-        if (request.ContentLength == 0)
-            return null;
-
-        if (request.ContentType != MediaTypeNames.Application.Json)
-            return null;
-
-        try
-        {
-            byte[] buffer = new byte[Convert.ToInt32(request.ContentLength)];
-            int readResult = await request.Body.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
-
-            return Encoding.UTF8.GetString(buffer);
-        }
-        catch(Exception exception) 
-        {
-            _logger.LogError(exception.ToString());
-            return null;
-        }
     }
 
     private async Task ApplyResponseAsync(
@@ -106,42 +53,17 @@ public class DatabaseMiddleware
             context.Response.Headers[header.Key] = header.Value;
         }
 
-        string? serializedResponseBody = SerializeResponseBody(response);
-
-        if (response.Status == null)
+        if (response.Body != null)
         {
-            context.Response.StatusCode = serializedResponseBody == null 
-                ? (int)HttpStatusCode.NoContent 
-                : (int)HttpStatusCode.OK
-            ;
-        } 
+            response.Headers.TryAdd(HeaderNames.ContentType, MediaTypeNames.Text.Plain);
+            response.Status ??= HttpStatusCode.OK;
+        }
         else 
-            context.Response.StatusCode = (int)response.Status;
+            response.Status ??= HttpStatusCode.NoContent;
 
-        if (serializedResponseBody != null) 
-            await context.Response.WriteAsync(serializedResponseBody, cancellationToken: cancellationToken);
-    }
+        context.Response.StatusCode = (int)response.Status;
 
-    private string? SerializeResponseBody(HttpResponseModel response)
-    {
-        if (!response.Headers.ContainsKey(HeaderNames.ContentType))
-        {
-            response.Headers[HeaderNames.ContentType] = MediaTypeNames.Text.Plain;
-            return response.Body?.ToString();
-        }
-
-        if (response.Headers[HeaderNames.ContentType] == MediaTypeNames.Application.Json)
-        {
-            try
-            {
-                return JsonSerializer.Serialize(response.Body);
-            }
-            catch
-            {
-                return response.Body?.ToString(); 
-            }
-        }
-
-        return response.Body?.ToString();
+        if (response.Body != null)
+            await context.Response.WriteAsync(response.Body, cancellationToken: cancellationToken);
     }
 }

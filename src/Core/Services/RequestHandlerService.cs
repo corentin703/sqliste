@@ -4,8 +4,10 @@ using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.Utils.Uri;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.Net.Http.Headers;
 
 namespace Sqliste.Core.Services;
 
@@ -40,27 +42,40 @@ public abstract class RequestHandlerService : IRequestHandlerService
 
         _logger.LogDebug("Procedure found for path {path} : {procedureName}", request.Path, procedure.Name);
         Dictionary<string, object?> sqlParams = GetParams(request, procedure);
-        return await ExecRequestAsync(procedure, sqlParams, cancellationToken);
+        HttpResponseModel response = await ExecRequestAsync(procedure, sqlParams, cancellationToken);
+
+        response.Headers.TryAdd(HeaderNames.ContentType, procedure.ContentType);
+
+        return response;
     }
 
     protected abstract Task<HttpResponseModel> ExecRequestAsync(ProcedureModel procedure, Dictionary<string, object?> sqlParams, CancellationToken cancellationToken);
 
     protected virtual Dictionary<string, object?> GetParams(HttpRequestModel request, ProcedureModel procedure)
     {
-        Dictionary<string, object?> queryParams = new Dictionary<string, object?>();
+        Dictionary<string, object?> sqlParams = new Dictionary<string, object?>();
         Dictionary<string, string> uriParams = ParseUriParams(request.Path, procedure);
 
         foreach (KeyValuePair<string, string> uriParam in uriParams)
         {
-            AddParams(queryParams, procedure.Arguments, uriParam.Key, uriParam.Value);
+            AddParams(sqlParams, procedure.Arguments, uriParam.Key, uriParam.Value);
         }
 
-        AddParams(queryParams, procedure.Arguments, "body", request.Body);
-        AddParams(queryParams, procedure.Arguments, "cookies", JsonSerializer.Serialize(request.Cookies));
-        AddParams(queryParams, procedure.Arguments, "headers", JsonSerializer.Serialize(request.Headers));
+        if (request.QueryString != null)
+        {
+            Dictionary<string, string> queryParams = UriQueryParamsParser.ParseQueryParams(request.QueryString);
+            foreach (KeyValuePair<string, string> queryParam in queryParams)
+            {
+                AddParams(sqlParams, procedure.Arguments, queryParam.Key, queryParam.Value);
+            }
+        }
 
-        _logger.LogDebug("Added {paramCount} for {procedureName}", queryParams.Count, procedure.Name);
-        return queryParams;
+        AddParams(sqlParams, procedure.Arguments, "body", request.Body);
+        AddParams(sqlParams, procedure.Arguments, "cookies", JsonSerializer.Serialize(request.Cookies));
+        AddParams(sqlParams, procedure.Arguments, "headers", JsonSerializer.Serialize(request.Headers));
+
+        _logger.LogDebug("Added {paramCount} for {procedureName}", sqlParams.Count, procedure.Name);
+        return sqlParams;
     }
 
     private void AddParams(
