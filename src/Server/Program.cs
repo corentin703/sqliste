@@ -1,4 +1,5 @@
 using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Contracts.Services.Events;
 using Sqliste.Core.Services;
 using Sqliste.Database.SqlServer.Extensions.ServiceCollection;
 using Sqliste.Server.Middlewares;
@@ -43,6 +44,12 @@ public class Program
 
         app.UseMiddleware<DatabaseMiddleware>();
         app.MapControllers();
+
+        //IWebSchemaEventDispatcher webSchemaEventDispatcher = app.Services.GetRequiredService<IWebSchemaEventDispatcher>();
+        //webSchemaEventDispatcher.Init();
+
+        IDatabaseEventWatcher databaseEventWatcher = app.Services.GetRequiredService<IDatabaseEventWatcher>();
+        databaseEventWatcher.Init();
 
         await using(AsyncServiceScope scope = app.Services.CreateAsyncScope())
         {

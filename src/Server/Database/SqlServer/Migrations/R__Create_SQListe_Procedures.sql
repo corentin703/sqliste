@@ -3,6 +3,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+DECLARE @current_db_name NVARCHAR(MAX);
+DECLARE @query_temp NVARCHAR(MAX);
+
+SET @current_db_name = DB_NAME();
+
+-- SET @query_temp = 'ALTER DATABASE ' + @current_db_name + ' SET ENABLE_BROKER WITH ROLLBACK IMMEDIATE';
+-- EXEC(@query_temp);
+
 IF NOT EXISTS (SELECT * FROM sys.schemas WHERE [name] = N'sqliste' )
     EXEC('CREATE SCHEMA [sqliste]');
 GO

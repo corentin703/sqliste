@@ -2,10 +2,10 @@
 
 public static class IntrospectionSqlQueries
 {
-    public static (string, object) GetProceduresQuery()
+    public static string GetProceduresQuery()
     {
         string query = "EXEC [sqliste].[p_web_procedures_get]";
-        return (query, new {});
+        return query;
     }
 
     public static (string, object) GetProceduresArgumentsQuery(string procedureName)

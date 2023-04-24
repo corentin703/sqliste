@@ -34,14 +34,14 @@ public class SqlServerDatabaseService : IDatabaseService, IDisposable
         return (await _sqlConnection.QueryAsync<T>(formattedQuery, queryParams))?.ToList();
     }
 
-    public async Task<List<IDictionary<string, object>>?> QueryAsync(string query, object parameters, CancellationToken cancellationToken = default)
+    public async Task<List<IDictionary<string, object>>?> QueryAsync(string query, object? parameters = null, CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Running query {query}", query);
         IEnumerable<dynamic>? result = await _sqlConnection.QueryAsync(query, parameters);
         return result?.Cast<IDictionary<string, object>>().ToList();
     }
 
-    public async Task<List<T>?> QueryAsync<T>(string query, object parameters, CancellationToken cancellationToken = default)
+    public async Task<List<T>?> QueryAsync<T>(string query, object? parameters = null, CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Running query {query}", query);
         return (await _sqlConnection.QueryAsync<T>(query, parameters))?.ToList();
