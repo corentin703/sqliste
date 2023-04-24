@@ -21,6 +21,7 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddScoped<IHttpModelsFactory, HttpModelsFactory>();
+        builder.Services.AddScoped<IDatabaseOpenApiService, DatabaseOpenApiService>();
         builder.Services.AddSqlServer(builder.Configuration);
 
         var app = builder.Build();
@@ -29,7 +30,11 @@ public class Program
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
-            app.UseSwaggerUI();
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/api/sqliste/Introspection/swagger.json", "SQListe");
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "SQListe WS");
+            });
         }
 
         app.UseHttpsRedirection();

@@ -84,12 +84,12 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
         RouteSqlAnnotation? routeAnnotation = procedure.Annotations
             .FirstOrDefault(annotation => annotation is RouteSqlAnnotation) as RouteSqlAnnotation;
 
-        string routePattern;
-
         if (routeAnnotation == null)
-            (routePattern, procedure.HttpMethods) = GetDefaultRoutePattern(procedure);
+            (procedure.Route, procedure.HttpMethods) = GetDefaultRoutePattern(procedure);
         else
-            routePattern = routeAnnotation.Path;
+            procedure.Route = routeAnnotation.Path;
+
+        string routePattern = procedure.Route;
 
         _logger.LogDebug("Found {pattern} for {procedureName}", routePattern, procedure.Name);
 

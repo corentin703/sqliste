@@ -5,6 +5,7 @@ namespace Sqliste.Core.Models.Sql;
 
 public class ProcedureModel
 {
+    public string Route { get; set; } = string.Empty;
     public string RoutePattern { get; set; } = string.Empty;
     public string Schema { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
