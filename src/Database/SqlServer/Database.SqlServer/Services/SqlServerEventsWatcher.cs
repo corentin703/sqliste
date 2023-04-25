@@ -1,9 +1,13 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using System.Data;
+using Coravel.Queuing.Interfaces;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Contracts.Services.Events;
+using Sqliste.Core.Jobs.Queuing;
+using Sqliste.Core.Models.Events;
 using Sqliste.Database.SqlServer.Configuration;
 
 namespace Sqliste.Database.SqlServer.Services;
@@ -16,13 +20,21 @@ public class SqlServerEventsWatcher : IDisposable, IDatabaseEventWatcher
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<SqlServerEventsWatcher> _logger;
     private readonly IOptionsMonitor<SqlServerConfiguration> _configurationMonitor;
+    private readonly List<EventModel> _events = new();
+    private readonly IQueue _queue;
+
+    private const string SelectEventsQuery 
+        = "SELECT [Id], [Type], [Name], [Args], [InsertedAt] FROM [sqliste].[app_events] WHERE [ID] > @Id";
+
+    private long? _lastMaxId = null;
 
     public SqlServerEventsWatcher(IServiceScopeFactory scopeFactory,
-        ILogger<SqlServerEventsWatcher> logger, IOptionsMonitor<SqlServerConfiguration> configurationMonitor)
+        ILogger<SqlServerEventsWatcher> logger, IOptionsMonitor<SqlServerConfiguration> configurationMonitor, IQueue queue)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _configurationMonitor = configurationMonitor;
+        _queue = queue;
     }
 
     public void Init()
@@ -50,8 +62,8 @@ public class SqlServerEventsWatcher : IDisposable, IDatabaseEventWatcher
             _sqlDependency.OnChange -= OnDependencyChange;
 
         SqlNotificationInfo sqlNotificationInfo = eventArgs.Info;
-        if (sqlNotificationInfo.Equals(SqlNotificationInfo.Insert) || sqlNotificationInfo.Equals(SqlNotificationInfo.Update))
-            NotifyEventsAsync().GetAwaiter().GetResult();
+        if (sqlNotificationInfo == SqlNotificationInfo.Truncate)
+            _lastMaxId = -1;
 
         SetupDependency();
     }
@@ -61,25 +73,45 @@ public class SqlServerEventsWatcher : IDisposable, IDatabaseEventWatcher
         if (_sqlConnection == null)
             return;
 
-        string query = "SELECT [Id], [Type], [Args], [InsertedAt], [ProcessedAt] FROM [sqliste].[app_events] WHERE [ProcessedAt] IS NULL";
-        using SqlCommand sqlCommand = new(query, _sqlConnection);
+        using SqlCommand sqlCommand = new(SelectEventsQuery, _sqlConnection);
+        sqlCommand.Parameters.AddWithValue("@Id", _lastMaxId ?? -1);
+
         _sqlDependency = new SqlDependency(sqlCommand);
         _sqlDependency.OnChange += OnDependencyChange;
         
         using SqlDataReader reader = sqlCommand.ExecuteReader();
+        _events.Clear();
+
+        if (!reader.HasRows) 
+            return;
+
+        while (reader.Read())
+        {
+            EventModel model = new()
+            {
+                Id = reader.GetInt64(0),
+                Type = reader.GetString(1),
+                Name = reader.GetString(2),
+                Args = reader.IsDBNull(3) ? null : reader.GetString(3),
+                InsertedAt = reader.GetDateTime(4),
+            };
+
+            _events.Add(model);
+        }
+
+        if (_lastMaxId.HasValue)
+            NotifyEvents();
+
+        _lastMaxId = _events.Max(e => e.Id);
     }
 
-    private async Task NotifyEventsAsync()
+    private void NotifyEvents()
     {
-        _logger.LogInformation("Detected change in web schema's procedures");
-        await using AsyncServiceScope scope = _scopeFactory.CreateAsyncScope();
-
-        IDatabaseIntrospectionService databaseIntrospectionService
-            = scope.ServiceProvider.GetRequiredService<IDatabaseIntrospectionService>();
-
-        databaseIntrospectionService.Clear();
-        await databaseIntrospectionService.IntrospectAsync();
-        _logger.LogInformation("Introspection done");
+        _queue.QueueInvocableWithPayload<DatabaseEventInvocable, DatabaseEventInvocablePayload>(
+            new DatabaseEventInvocablePayload()
+            {
+                Events = new List<EventModel>(_events),
+            });
     }
 
     public void Dispose()

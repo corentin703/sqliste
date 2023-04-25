@@ -21,8 +21,8 @@ public class SqlServerIntrospectionService : DatabaseIntrospectionService
     protected override async Task<List<ProcedureModel>> QueryProceduresAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Querying procedures");
-        string query = IntrospectionSqlQueries.GetProceduresQuery();
-        List<ProcedureModel>? procedures = await DatabaseService.QueryAsync<ProcedureModel>(query, cancellationToken: cancellationToken);
+        (string query, object args) = IntrospectionSqlQueries.GetProceduresQuery();
+        List<ProcedureModel>? procedures = await DatabaseService.QueryAsync<ProcedureModel>(query, args, cancellationToken: cancellationToken);
 
         if (procedures == null || procedures.Count == 0)
         {
