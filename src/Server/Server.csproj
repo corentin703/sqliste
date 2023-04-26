@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Extensions\ServiceCollection\" />
     <Folder Include="Middlewares\" />
   </ItemGroup>
 

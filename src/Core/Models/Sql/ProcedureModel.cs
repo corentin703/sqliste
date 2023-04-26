@@ -1,4 +1,5 @@
-﻿using System.Net.Mime;
+﻿using System.Net;
+using System.Net.Mime;
 using Sqliste.Core.Contracts;
 
 namespace Sqliste.Core.Models.Sql;

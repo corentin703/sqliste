@@ -37,14 +37,4 @@ public static class EventHandlersUtils
             return _handlersByEventName;
         }
     }
-
-    public static IServiceCollection AddDatabaseEventHandlers(IServiceCollection services)
-    {
-        foreach (Type type in HandlersByEventName.Values)
-        {
-            services.AddTransient(type);
-        }
-
-        return services;
-    }
 }

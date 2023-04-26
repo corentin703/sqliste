@@ -1,10 +1,13 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Generic;
+using System.Net;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Models;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Sql;
+using Sqliste.Core.SqlAnnotations.OpenApi;
 
 namespace Sqliste.Core.Services;
 
@@ -30,7 +33,6 @@ public class DatabaseOpenApiService : IDatabaseOpenApiService
         introspection.ForEach(procedure =>
         {
             OpenApiPathItem path;
-
             if (!paths.TryGetValue(procedure.Route, out path))
             {
                 path = new OpenApiPathItem()
@@ -41,22 +43,10 @@ public class DatabaseOpenApiService : IDatabaseOpenApiService
                 paths.Add(procedure.Route, path);
             }
 
-            List<OpenApiTag> tags = GenerateTags(procedure.Route);
             List<OperationType> operationTypes = procedure.HttpMethods.Select(HttpMethodToOperationType).ToList();
-            operationTypes.ForEach(operationType =>
-            {
-                path.Operations.TryAdd(operationType, new OpenApiOperation()
-                {
-                    Tags = tags,
-                    Responses = new OpenApiResponses()
-                    {
-                        ["200"] = new OpenApiResponse()
-                        {
-                            Description = "OK",
-                        },
-                    },
-                });
-            });
+            operationTypes.ForEach(operationType => 
+                path.Operations.TryAdd(operationType, GenerateOperation(procedure))
+            );
         });
 
         OpenApiDocument openApiDocument = new()
@@ -75,6 +65,37 @@ public class DatabaseOpenApiService : IDatabaseOpenApiService
         _logger.LogDebug("OpenApi document serialized as v3");
 
         return openApiJson;
+    }
+
+    private OpenApiOperation GenerateOperation(ProcedureModel procedure)
+    {
+        List<OpenApiTag> tags = GenerateTags(procedure.Route);
+        OpenApiResponses responses = GenerateResponses(procedure);
+
+        return new OpenApiOperation()
+        {
+            Tags = tags,
+            Responses = responses,
+        };
+    }
+
+    private OpenApiResponses GenerateResponses(ProcedureModel procedure)
+    {
+        List<ProducesResponseTypeSqlAnnotation> producesResponseAnnotations = procedure.Annotations
+            .Where(annotation => annotation is ProducesResponseTypeSqlAnnotation)
+            .Cast<ProducesResponseTypeSqlAnnotation>()
+            .ToList();
+
+        OpenApiResponses responses = new OpenApiResponses();
+        producesResponseAnnotations.ForEach(annotation =>
+        {
+            responses.Add(((int)annotation.StatusCode).ToString(), new OpenApiResponse()
+            {
+                Description = annotation.Description,
+            });
+        });
+
+        return responses;
     }
 
     private List<OpenApiTag> GenerateTags(string route)

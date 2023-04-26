@@ -5,9 +5,9 @@ using Sqliste.Core.Contracts.Services.Events;
 using Sqliste.Core.Jobs.Queuing;
 using Sqliste.Core.Services;
 using Sqliste.Core.Services.Events;
-using Sqliste.Core.Utils.Events;
+using Sqliste.Database.SqlServer.Extensions.Host;
 using Sqliste.Database.SqlServer.Extensions.ServiceCollection;
-using Sqliste.Database.SqlServer.Jobs.Scheduling;
+using Sqliste.Server.Extensions.ServiceCollection;
 using Sqliste.Server.Middlewares;
 
 namespace Sqliste.Server;
@@ -16,7 +16,7 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);
+        WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddHttpContextAccessor();
 
@@ -36,10 +36,11 @@ public class Program
         builder.Services.AddScoped<IDatabaseOpenApiService, DatabaseOpenApiService>();
         builder.Services.AddTransient<IDatabaseEventDispatcher, DatabaseEventDispatcher>();
         builder.Services.AddTransient<DatabaseEventInvocable>();
-        EventHandlersUtils.AddDatabaseEventHandlers(builder.Services);
+        
+        builder.Services.AddDatabaseEventHandlers();
         builder.Services.AddSqlServer(builder.Configuration);
 
-        var app = builder.Build();
+        WebApplication app = builder.Build();
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
@@ -59,20 +60,20 @@ public class Program
         app.UseMiddleware<DatabaseMiddleware>();
         app.MapControllers();
 
-        var provider = app.Services;
-        provider
+        app.Services
             .ConfigureQueue()
-            .OnError(e =>
+            .OnError(exception =>
             {
-                app.Services.GetRequiredService<ILogger<IQueue>>().LogError(e.ToString());
+                app.Services
+                    .GetRequiredService<ILogger<IQueue>>()
+                    .LogError("An error occurred during queued task : {exception}", exception.ToString()); 
             })
-            .LogQueuedTaskProgress(provider.GetService<ILogger<IQueue>>());
-
-        //IWebSchemaEventDispatcher webSchemaEventDispatcher = app.Services.GetRequiredService<IWebSchemaEventDispatcher>();
-        //webSchemaEventDispatcher.Init();
+            .LogQueuedTaskProgress(app.Services.GetRequiredService<ILogger<IQueue>>());
 
         IDatabaseEventWatcher databaseEventWatcher = app.Services.GetRequiredService<IDatabaseEventWatcher>();
         databaseEventWatcher.Init();
+
+        app.UseSqlServer();
 
         await using(AsyncServiceScope scope = app.Services.CreateAsyncScope())
         {
@@ -84,12 +85,6 @@ public class Program
                 scope.ServiceProvider.GetRequiredService<IDatabaseIntrospectionService>();
             await databaseIntrospectionService.IntrospectAsync();
         }
-
-
-        app.Services.UseScheduler(scheduler =>
-        {
-            scheduler.Schedule<DatabaseAppEventCleaningInvocable>().EverySeconds(10);
-        });
 
         await app.RunAsync();
     }

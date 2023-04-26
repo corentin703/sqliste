@@ -44,3 +44,19 @@ BEGIN
     ORDER BY P.parameter_id
 END
 GO
+
+CREATE OR ALTER   PROCEDURE [sqliste].[p_event_trigger_web_schema_update]
+AS 
+BEGIN
+    INSERT INTO [sqliste].[app_events] ([Type], [Name])
+    VALUES ('SYS', 'WebSchemaUpdate');
+END
+GO
+
+CREATE OR ALTER   PROCEDURE [sqliste].[pr_app_event_cleanup]
+AS 
+BEGIN
+    DELETE FROM [sqliste].[app_events]
+    WHERE [InsertedAt] < DATEADD(hh, -1, GETDATE()); 
+END
+GO

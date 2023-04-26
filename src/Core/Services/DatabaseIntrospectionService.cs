@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,7 @@ using Sqliste.Core.Exceptions.Procedures;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.SqlAnnotations;
 using Sqliste.Core.SqlAnnotations.HttpMethods;
+using Sqliste.Core.SqlAnnotations.OpenApi;
 using Sqliste.Core.Utils.SqlAnnotations;
 
 namespace Sqliste.Core.Services;
