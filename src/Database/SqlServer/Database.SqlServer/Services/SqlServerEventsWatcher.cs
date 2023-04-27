@@ -24,7 +24,7 @@ public class SqlServerEventsWatcher : IDisposable, IDatabaseEventWatcher
     private readonly IQueue _queue;
 
     private const string SelectEventsQuery 
-        = "SELECT [Id], [Type], [Name], [Args], [InsertedAt] FROM [sqliste].[app_events] WHERE [ID] > @Id";
+        = "SELECT [id], [type], [name], [args], [inserted_at] FROM [sqliste].[app_events] WHERE [ID] > @Id";
 
     private long? _lastMaxId = null;
 

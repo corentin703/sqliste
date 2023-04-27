@@ -4,5 +4,5 @@ namespace Sqliste.Core.Contracts.Services;
 
 public interface IRequestHandlerService
 {
-    public Task<HttpResponseModel> HandleRequestAsync(HttpRequestModel request, CancellationToken cancellationToken = default);
+    public Task<HttpRequestModel> HandleRequestAsync(HttpRequestModel request, CancellationToken cancellationToken = default);
 }

@@ -1,13 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Net;
-using System.Text.RegularExpressions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Models;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.SqlAnnotations.OpenApi;
+using System.Text.RegularExpressions;
 
 namespace Sqliste.Core.Services;
 
@@ -27,12 +25,12 @@ public class DatabaseOpenApiService : IDatabaseOpenApiService
     public async Task<string> GenerateOpenApiJsonAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Generating OpenApiDocument");
-        List<ProcedureModel> introspection = await _databaseIntrospectionService.IntrospectAsync(cancellationToken);
+        DatabaseIntrospectionModel introspection = await _databaseIntrospectionService.IntrospectAsync(cancellationToken);
 
         OpenApiPaths paths = new();
-        introspection.ForEach(procedure =>
+        introspection.Endpoints.ForEach(procedure =>
         {
-            OpenApiPathItem path;
+            OpenApiPathItem? path;
             if (!paths.TryGetValue(procedure.Route, out path))
             {
                 path = new OpenApiPathItem()
@@ -71,10 +69,29 @@ public class DatabaseOpenApiService : IDatabaseOpenApiService
     {
         List<OpenApiTag> tags = GenerateTags(procedure.Route);
         OpenApiResponses responses = GenerateResponses(procedure);
+        List<OpenApiParameter> parameters = new();
+
+        procedure.Arguments.ForEach(argument =>
+        {
+            if (argument.IsSystemParam)
+                return;
+
+            parameters.Add(new OpenApiParameter()
+            {
+                Name = argument.Name,
+                Schema = new OpenApiSchema()
+                {
+                    Type = argument.SqlDataType,
+                },
+                In = argument.Location,
+            });
+        });
+
 
         return new OpenApiOperation()
         {
             Tags = tags,
+            Parameters = parameters,
             Responses = responses,
         };
     }

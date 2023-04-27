@@ -1,15 +1,13 @@
-﻿using System.Net;
-using System.Net.Http;
-using System.Text.RegularExpressions;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Exceptions.Procedures;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.SqlAnnotations;
 using Sqliste.Core.SqlAnnotations.HttpMethods;
-using Sqliste.Core.SqlAnnotations.OpenApi;
 using Sqliste.Core.Utils.SqlAnnotations;
+using System.Text.RegularExpressions;
 
 namespace Sqliste.Core.Services;
 
@@ -30,7 +28,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
         _logger = logger;
     }
 
-    public virtual async Task<List<ProcedureModel>> IntrospectAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<DatabaseIntrospectionModel> IntrospectAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Reading database introspection");
         List<ProcedureModel>? procedures;
@@ -57,7 +55,55 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
         }
         
         _logger.LogDebug("Database introspection retrieved");
-        return procedures;
+
+        List<ProcedureModel> endpoints = procedures
+            .Where(procedure =>
+                procedure.Annotations.All(annotation => annotation is not MiddlewareSqlAnnotation)
+            )
+            .ToList();
+
+        //Func<ProcedureModel, ProcedureModel> formatMiddleware = middleware =>
+        //{
+        //    MiddlewareSqlAnnotation annotation = (MiddlewareSqlAnnotation) middleware
+        //        .Annotations
+        //        .First(annotation => annotation is MiddlewareSqlAnnotation);
+
+        //    middleware.Route = annotation.PathStarts;
+        //    return middleware;
+        //};
+
+        Func<ProcedureModel, int> sortMiddleware = middleware =>
+        {
+            MiddlewareSqlAnnotation annotation = (MiddlewareSqlAnnotation) middleware
+                .Annotations
+                .First(annotation => annotation is MiddlewareSqlAnnotation);
+
+            middleware.Route = annotation.PathStarts;
+            return annotation.Order;
+        };
+
+        List<ProcedureModel> beforeMiddlewares = procedures
+            .Where(procedure =>
+                procedure.Annotations.Any(annotation => annotation is MiddlewareSqlAnnotation {After: false})
+            )
+            //.Select(formatMiddleware)
+            .OrderBy(sortMiddleware)
+            .ToList();
+
+        List<ProcedureModel> afterMiddlewares = procedures
+            .Where(procedure =>
+                procedure.Annotations.Any(annotation => annotation is MiddlewareSqlAnnotation {After: true})
+            )
+            //.Select(formatMiddleware)
+            .OrderBy(sortMiddleware)
+            .ToList();
+
+        return new DatabaseIntrospectionModel()
+        {
+            Endpoints = endpoints,
+            BeforeMiddlewares = beforeMiddlewares,
+            AfterMiddlewares = afterMiddlewares,
+        };
     }
 
     public void Clear()
@@ -67,7 +113,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
 
     protected abstract Task<List<ProcedureModel>> QueryProceduresAsync(CancellationToken cancellationToken = default);
 
-    protected abstract Task<List<ArgumentModel>> QueryProceduresParamsAsync(string procedureName, CancellationToken cancellationToken = default);
+    protected abstract Task<List<ProcedureArgumentModel>> QueryProceduresParamsAsync(string procedureName, CancellationToken cancellationToken = default);
 
     protected virtual async Task IntrospectProcedureAsync(
         ProcedureModel procedure,
@@ -75,10 +121,10 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
     )
     {
         procedure.Annotations = SqlAnnotationParser.ParseSqlString(procedure.Content);
+        procedure.Arguments = await QueryProceduresParamsAsync(procedure.Name, cancellationToken);
         SetupRoutePattern(procedure);
         SetupHttpMethod(procedure);
         SetupContentType(procedure);
-        procedure.Arguments = await QueryProceduresParamsAsync(procedure.Name, cancellationToken);
     }
 
     private void SetupRoutePattern(ProcedureModel procedure)
@@ -110,7 +156,19 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
                 _logger.LogWarning("Reading empty param name for procedure {procedureName}", procedure.Name);
                 continue;
             }
-            
+
+            ProcedureArgumentModel? procedureArgument = procedure.Arguments.FirstOrDefault(arg => arg.Name == paramName);
+            if (procedureArgument == null)
+            {
+                _logger.LogWarning(
+                    "Path param {paramName} not existing in procedure {procedureName}'s arguments", 
+                    paramName, 
+                    procedure.Name
+                );
+            }
+            else
+                procedureArgument.Location = ParameterLocation.Path;
+
             paramsNames.Add(paramName);
             routePattern = routePattern.Replace($"{{{paramName}}}", $@"(?<{paramName}>\w+)");
         }

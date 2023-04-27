@@ -1,10 +1,13 @@
 using Coravel;
 using Coravel.Queuing.Interfaces;
+using DapperCodeFirstMappings;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Contracts.Services.Events;
 using Sqliste.Core.Jobs.Queuing;
+using Sqliste.Core.Models.Sql;
 using Sqliste.Core.Services;
 using Sqliste.Core.Services.Events;
+using Sqliste.Database.SqlServer.Configuration;
 using Sqliste.Database.SqlServer.Extensions.Host;
 using Sqliste.Database.SqlServer.Extensions.ServiceCollection;
 using Sqliste.Server.Extensions.ServiceCollection;
@@ -17,6 +20,10 @@ public class Program
     public static async Task Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+        DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(ProcedureModel).Assembly);
+        DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(SqlServerConfiguration).Assembly);
+        DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(Program).Assembly);
 
         builder.Services.AddHttpContextAccessor();
 
@@ -70,21 +77,21 @@ public class Program
             })
             .LogQueuedTaskProgress(app.Services.GetRequiredService<ILogger<IQueue>>());
 
-        IDatabaseEventWatcher databaseEventWatcher = app.Services.GetRequiredService<IDatabaseEventWatcher>();
-        databaseEventWatcher.Init();
-
-        app.UseSqlServer();
-
         await using(AsyncServiceScope scope = app.Services.CreateAsyncScope())
         {
             IDatabaseMigrationService databaseMigrationService = 
                 scope.ServiceProvider.GetRequiredService<IDatabaseMigrationService>();
             databaseMigrationService.Migrate();
 
-            IDatabaseIntrospectionService databaseIntrospectionService = 
+            IDatabaseIntrospectionService databaseIntrospectionService =
                 scope.ServiceProvider.GetRequiredService<IDatabaseIntrospectionService>();
             await databaseIntrospectionService.IntrospectAsync();
         }
+
+        IDatabaseEventWatcher databaseEventWatcher = app.Services.GetRequiredService<IDatabaseEventWatcher>();
+        databaseEventWatcher.Init();
+
+        app.UseSqlServer();
 
         await app.RunAsync();
     }

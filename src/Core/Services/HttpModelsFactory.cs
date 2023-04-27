@@ -4,6 +4,7 @@ using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Http;
 using System.Net.Mime;
 using System.Text;
+using System.Text.Json;
 
 namespace Sqliste.Core.Services;
 
@@ -42,8 +43,8 @@ public class HttpModelsFactory : IHttpModelsFactory
             QueryString = queryString,
             Method = httpMethod,
             Body = bodyContent,
-            Cookies = cookies,
-            Headers = headers,
+            Cookies = JsonSerializer.Serialize(cookies),
+            Headers = JsonSerializer.Serialize(headers),
         };
 
         return requestModel;

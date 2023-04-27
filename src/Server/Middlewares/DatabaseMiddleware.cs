@@ -4,6 +4,8 @@ using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Http;
 using System.Net;
 using System.Net.Mime;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Sqliste.Server.Middlewares;
 
@@ -38,24 +40,23 @@ public class DatabaseMiddleware
         IHttpModelsFactory httpModelsFactory = context.RequestServices.GetRequiredService<IHttpModelsFactory>();
 
         HttpRequestModel request = await httpModelsFactory.BuildRequestModelAsync(context.RequestAborted);
-        HttpResponseModel response = await requestHandlerService.HandleRequestAsync(request, context.RequestAborted);
+        HttpRequestModel response = await requestHandlerService.HandleRequestAsync(request, context.RequestAborted);
         await ApplyResponseAsync(context, response, context.RequestAborted);
     }
 
     private async Task ApplyResponseAsync(
         HttpContext context, 
-        HttpResponseModel response,
+        HttpRequestModel response,
         CancellationToken cancellationToken = default
     )
     {
-        foreach (KeyValuePair<string, string> header in response.Headers)
-        {
-            context.Response.Headers[header.Key] = header.Value;
-        }
+        Dictionary<string, string>? headers = ApplyHeaders(context, response);
 
         if (response.Body != null)
         {
-            response.Headers.TryAdd(HeaderNames.ContentType, MediaTypeNames.Text.Plain);
+            if (headers == null || !headers.ContainsKey(HeaderNames.ContentType))
+                context.Response.Headers[HeaderNames.ContentType] = response.ContentType ?? MediaTypeNames.Text.Plain;
+
             response.Status ??= HttpStatusCode.OK;
         }
         else 
@@ -65,5 +66,32 @@ public class DatabaseMiddleware
 
         if (response.Body != null)
             await context.Response.WriteAsync(response.Body, cancellationToken: cancellationToken);
+    }
+
+    private Dictionary<string, string>? ApplyHeaders(HttpContext context, HttpRequestModel response)
+    {
+        if (response.Headers == null)
+            return null;
+
+        try
+        {
+            Dictionary<string, string>? headers =
+                JsonSerializer.Deserialize<Dictionary<string, string>>(response.Headers);
+
+            if (headers != null)
+                return null;
+
+            foreach (KeyValuePair<string, string> header in headers)
+            {
+                context.Response.Headers[header.Key] = header.Value;
+            }
+
+            return headers;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError("Error during headers parsing {exception}", exception);
+            return null;
+        }
     }
 }

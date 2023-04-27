@@ -17,7 +17,7 @@ public class IntrospectionController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAllAsync(string d, CancellationToken cancellationToken)
     {
         return Ok(await _databaseIntrospectionService.IntrospectAsync(cancellationToken));
     }

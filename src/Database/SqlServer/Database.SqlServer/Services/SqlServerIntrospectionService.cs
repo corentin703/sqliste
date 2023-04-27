@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using System.Data;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.Services;
+using Sqliste.Database.SqlServer.Models;
 using Sqliste.Database.SqlServer.SqlQueries;
 
 namespace Sqliste.Database.SqlServer.Services;
@@ -34,13 +36,22 @@ public class SqlServerIntrospectionService : DatabaseIntrospectionService
         return procedures;
     }
 
-    protected override async Task<List<ArgumentModel>> QueryProceduresParamsAsync(string procedureName, CancellationToken cancellationToken = default)
+    protected override async Task<List<ProcedureArgumentModel>> QueryProceduresParamsAsync(string procedureName, CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Querying procedure params for {procedureName}", procedureName);
         (string query, object args) = IntrospectionSqlQueries.GetProceduresArgumentsQuery(procedureName);
-        List<ArgumentModel>? procedureArgs = await DatabaseService.QueryAsync<ArgumentModel>(query, args, cancellationToken);
+        List<SqlServerProcedureArgumentModel>? rawProcedureArgs = await DatabaseService
+            .QueryAsync<SqlServerProcedureArgumentModel>(query, args, cancellationToken);
 
-        procedureArgs ??= new List<ArgumentModel>();
+        List<ProcedureArgumentModel> procedureArgs = rawProcedureArgs?.Select(arg => 
+            new ProcedureArgumentModel()
+            {
+                Name = arg.Name,
+                SqlDataType = arg.SqlDataType,
+                Direction = arg.IsOutput ? ParameterDirection.InputOutput : ParameterDirection.Input,
+                IsSystemParam = arg.Name == "body" || arg.Name == "headers" || arg.Name == "cookies" || arg.Name == "data_bag",
+            }
+        ).ToList() ?? new List<ProcedureArgumentModel>();
 
         _logger.LogInformation("Got {number} params for {procedureName}", procedureArgs.Count, procedureName);
 
