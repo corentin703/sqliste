@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Sql;
@@ -18,21 +19,39 @@ public class SqlServerRequestHandlerService : RequestHandlerService
     }
 
     protected override async Task<HttpRequestModel?> ExecProcedureAsync(
+        HttpRequestModel request,
         ProcedureModel procedure, 
         Dictionary<string, object?> sqlParams, 
         CancellationToken cancellationToken
     )
     {
-        _logger.LogDebug("Starting exec for {procedureName} with {paramCount} params", procedure.Name, sqlParams.Count);
-        List<HttpRequestModel>? result = await DatabaseService.ExecAsync<HttpRequestModel>(
-            $"{procedure.Schema}.{procedure.Name}", 
-            procedure.Arguments,
-            sqlParams,
-            cancellationToken
-        );
+        try
+        {
+            _logger.LogDebug("Starting exec for {procedureName} with {paramCount} params", procedure.Name,
+                sqlParams.Count);
+            List<HttpRequestModel>? result = await DatabaseService.ExecAsync<HttpRequestModel>(
+                $"{procedure.Schema}.{procedure.Name}",
+                procedure.Arguments,
+                sqlParams,
+                cancellationToken
+            );
 
-        _logger.LogDebug("Ended exec for {procedureName} with {paramCount} params", procedure.Name, sqlParams.Count);
+            _logger.LogDebug("Ended exec for {procedureName} with {paramCount} params", procedure.Name,
+                sqlParams.Count);
 
-        return result?.FirstOrDefault();
+            return result?.FirstOrDefault();
+        }
+        catch (SqlException sqlException)
+        {
+            request.IsError = true;
+            request.ErrorMessage = sqlException.Message;
+            request.ErrorAttributes = new Dictionary<string, object>()
+            {
+                {"state", sqlException.State},
+            };
+            request.RawException = sqlException;
+
+            return request;
+        }
     }
 }

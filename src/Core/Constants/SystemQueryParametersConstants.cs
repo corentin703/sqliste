@@ -8,4 +8,6 @@ public static class SystemQueryParametersConstants
     public const string Headers = "headers";
     public const string Next = "next";
     public const string PathParams = "path_params";
+    public const string Error = "error";
+    public const string ErrorAttributes = "error_attributes";
 }

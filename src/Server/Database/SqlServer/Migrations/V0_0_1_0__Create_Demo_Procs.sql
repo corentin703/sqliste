@@ -140,3 +140,33 @@ BEGIN
 END
 GO
 
+-- #Middleware(Order = 1, PathStarts = "/api/books", After = true)
+CREATE   PROCEDURE [web].[p_middleware_catch_error]
+    @body NVARCHAR(MAX) = NULL,
+    @headers NVARCHAR(MAX) = NULL,
+    @cookies NVARCHAR(MAX) = NULL,
+    @route NVARCHAR(MAX) = NULL,
+    @data_bag NVARCHAR(MAX),
+    @error NVARCHAR(MAX),
+    @error_attributes NVARCHAR(MAX) = NULL
+AS
+BEGIN
+    DECLARE @response_body NVARCHAR(MAX);
+
+    IF (@error IS NULL) 
+    BEGIN
+        RETURN;
+    END
+
+    SET @response_body = (
+        SELECT 
+            @error AS [error],
+            @error_attributes  AS [error_attributes]
+        FOR JSON PATH
+    );
+
+    SELECT @response_body = JSON_QUERY(@response_body, '$[0]');
+
+    SELECT @response_body AS [body], 1 AS 'next'
+END
+GO

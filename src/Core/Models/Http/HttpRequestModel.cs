@@ -27,4 +27,13 @@ public class HttpRequestModel
     public string? QueryString { get; set; }
     public string? ContentType { get; set; }
     public HttpStatusCode? Status { get; set; }
+
+    #region Error
+
+    public bool IsError { get; set; }
+    public string? ErrorMessage { get; set; }
+    public Dictionary<string, object>? ErrorAttributes { get; set; }
+    public Exception? RawException { get; set; }
+
+    #endregion
 }
