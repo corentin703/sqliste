@@ -8,6 +8,7 @@ using Sqliste.Core.SqlAnnotations;
 using Sqliste.Core.SqlAnnotations.HttpMethods;
 using Sqliste.Core.Utils.SqlAnnotations;
 using System.Text.RegularExpressions;
+using Sqliste.Core.Models.Http;
 using Sqliste.Core.SqlAnnotations.OpenApi;
 
 namespace Sqliste.Core.Services;
@@ -124,7 +125,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
             .FirstOrDefault(annotation => annotation is RouteSqlAnnotation) as RouteSqlAnnotation;
 
         if (routeAnnotation == null)
-            (procedure.Route, procedure.HttpMethods) = GetDefaultRoutePattern(procedure);
+            (procedure.Route, procedure.Operations) = GetDefaultRoutePattern(procedure);
         else
             procedure.Route = routeAnnotation.Path;
 
@@ -179,21 +180,64 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
         if (methodAnnotations.Count == 0)
             return;
 
-        List<HttpMethod> httpMethods = new();
+        List<HttpOperationModel> httpOperations = new();
 
-        if (methodAnnotations.Any(annotation => annotation is HttpGetSqlAnnotation))
-            httpMethods.Add(HttpMethod.Get);
+        HttpMethodBaseSqlAnnotation? getMethod =
+            methodAnnotations.FirstOrDefault(annotation => annotation is HttpGetSqlAnnotation);
+        if (getMethod != null)
+        {
+            httpOperations.Add(new HttpOperationModel()
+            {
+                Id = getMethod.Id,
+                Method = HttpMethod.Get,
+            });
+        }
 
-        if (methodAnnotations.Any(annotation => annotation is HttpPostSqlAnnotation))
-            httpMethods.Add(HttpMethod.Post);
+        HttpMethodBaseSqlAnnotation? postMethod =
+            methodAnnotations.FirstOrDefault(annotation => annotation is HttpPostSqlAnnotation);
+        if (postMethod != null)
+        {
+            httpOperations.Add(new HttpOperationModel()
+            {
+                Id = postMethod.Id,
+                Method = HttpMethod.Post,
+            });
+        }
 
-        if (methodAnnotations.Any(annotation => annotation is HttpPutSqlAnnotation))
-            httpMethods.Add(HttpMethod.Put);
+        HttpMethodBaseSqlAnnotation? putMethod =
+            methodAnnotations.FirstOrDefault(annotation => annotation is HttpPutSqlAnnotation);
+        if (putMethod != null)
+        {
+            httpOperations.Add(new HttpOperationModel()
+            {
+                Id = putMethod.Id,
+                Method = HttpMethod.Put,
+            });
+        }
 
-        if (methodAnnotations.Any(annotation => annotation is HttpPatchSqlAnnotation))
-            httpMethods.Add(HttpMethod.Delete);
+        HttpMethodBaseSqlAnnotation? patchMethod =
+            methodAnnotations.FirstOrDefault(annotation => annotation is HttpPatchSqlAnnotation);
+        if (patchMethod != null)
+        {
+            httpOperations.Add(new HttpOperationModel()
+            {
+                Id = patchMethod.Id,
+                Method = HttpMethod.Patch,
+            });
+        }
 
-        procedure.HttpMethods = httpMethods.ToArray();
+        HttpMethodBaseSqlAnnotation? deleteMethod =
+            methodAnnotations.FirstOrDefault(annotation => annotation is HttpDeleteSqlAnnotation);
+        if (deleteMethod != null)
+        {
+            httpOperations.Add(new HttpOperationModel()
+            {
+                Id = deleteMethod.Id,
+                Method = HttpMethod.Delete,
+            });
+        }
+
+        procedure.Operations = httpOperations.ToArray();
     }
 
     private void SetupContentType(ProcedureModel procedure)
@@ -207,7 +251,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
         procedure.ContentType = producesAnnotation.Mime;
     }
 
-    protected virtual (string, HttpMethod[]) GetDefaultRoutePattern(ProcedureModel procedure)
+    protected virtual (string, HttpOperationModel[]) GetDefaultRoutePattern(ProcedureModel procedure)
     {
         HttpMethod? httpMethod = null;
         Match procedureToRouteMatch = Regex.Match(procedure.Name, ProcedureToRoutePattern);
@@ -243,8 +287,16 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
         }
 
         if (httpMethod != null)
-            return ($"/{resource}", new [] {httpMethod});
+        {
+            return ($"/{resource}", new []
+            {
+                new HttpOperationModel()
+                {
+                    Method = httpMethod,
+                }
+            });
+        }
 
-        return ($"/{resource}/{action}", procedure.HttpMethods);
+        return ($"/{resource}/{action}", procedure.Operations);
     }
 }

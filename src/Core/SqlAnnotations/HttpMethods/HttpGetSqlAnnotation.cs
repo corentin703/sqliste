@@ -2,5 +2,13 @@
 
 public class HttpGetSqlAnnotation : HttpMethodBaseSqlAnnotation
 {
-   //
+    public HttpGetSqlAnnotation()
+    {
+        //
+    }
+
+    public HttpGetSqlAnnotation(string? id) : base(id)
+    {
+        //
+    }
 }

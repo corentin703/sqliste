@@ -7,6 +7,7 @@ using Sqliste.Core.Models.Sql;
 using Sqliste.Core.SqlAnnotations.OpenApi;
 using System.Text.RegularExpressions;
 using Sqliste.Core.Models;
+using Sqliste.Core.Models.Http;
 
 namespace Sqliste.Core.Services;
 
@@ -45,10 +46,13 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
                 paths.Add(procedure.Route, path);
             }
 
-            List<OperationType> operationTypes = procedure.HttpMethods.Select(HttpMethodToOperationType).ToList();
-            foreach (OperationType operationType in operationTypes)
+            foreach (HttpOperationModel operationModel in procedure.Operations)
             {
-                path.Operations.TryAdd(operationType, await GenerateOperationAsync(procedure, cancellationToken));
+                OperationType operationType = HttpMethodToOperationType(operationModel.Method);
+                OpenApiOperation operation = await GenerateOperationAsync(procedure, cancellationToken);
+                operation.OperationId = operationModel.Id;
+
+                path.Operations.TryAdd(operationType, operation);
             }
         }
 
@@ -104,6 +108,7 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
             Tags = tags,
             Parameters = parameters,
             Responses = responses,
+            
         };
 
         if (takesSqlAnnotation == null) 
@@ -159,10 +164,7 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
         respondAnnotations.ForEach(responds =>
         {
             OpenApiResponse response = new();
-            if (!string.IsNullOrEmpty(responds.Description))
-                response.Description = responds.Description;
-
-
+      
 
             if (!string.IsNullOrEmpty(responds.Type))
             {
@@ -186,8 +188,8 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
                 response.Content = content;
             }
 
-            if (!string.IsNullOrEmpty(response.Description))
-                response.Description = response.Description;
+            if (!string.IsNullOrEmpty(responds.Description))
+                response.Description = responds.Description;
 
             responses.Add(((int)responds.Status).ToString(), response);
         });

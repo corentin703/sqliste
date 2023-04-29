@@ -2,5 +2,13 @@
 
 public class HttpPatchSqlAnnotation : HttpMethodBaseSqlAnnotation
 {
-    //
+    public HttpPatchSqlAnnotation()
+    {
+        //
+    }
+
+    public HttpPatchSqlAnnotation(string? id) : base(id)
+    {
+        //
+    }
 }

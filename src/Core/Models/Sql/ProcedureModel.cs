@@ -1,5 +1,6 @@
 ﻿using DapperCodeFirstMappings.Attributes;
 using Sqliste.Core.Contracts;
+using Sqliste.Core.Models.Http;
 using System.Net.Mime;
 
 namespace Sqliste.Core.Models.Sql;
@@ -25,7 +26,13 @@ public class ProcedureModel
     public List<string> RouteParamNames { get; set; } = new();
 
     #region FromAnnotations
-    public HttpMethod[] HttpMethods { get; set; } = new [] { HttpMethod.Post, };
+    public HttpOperationModel[] Operations { get; set; } = new [] 
+    { 
+        new HttpOperationModel()
+        {
+            Method = HttpMethod.Post,
+        },
+    };
 
     public string ContentType { get; set; } = MediaTypeNames.Text.Plain;
     #endregion

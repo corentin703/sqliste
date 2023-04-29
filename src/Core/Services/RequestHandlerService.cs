@@ -188,7 +188,7 @@ public abstract class RequestHandlerService : IRequestHandlerService
 
     private bool IsMatchingVerb(HttpRequestModel request, ProcedureModel procedure)
     {
-        return procedure.HttpMethods.Any(method => method == request.Method);
+        return procedure.Operations.Any(operation => operation.Method == request.Method);
     }
 
     private Dictionary<string, string> ParseUriParams(string uri, ProcedureModel procedure)
