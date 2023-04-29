@@ -5,7 +5,6 @@ using Microsoft.Extensions.Options;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Database.SqlServer.Configuration;
-using System.Data;
 
 namespace Sqliste.Database.SqlServer.Services;
 
@@ -76,11 +75,10 @@ public class SqlServerDatabaseService : IDatabaseService, IDisposable
 
         string query = $"EXEC {procedure}";
 
-        //List<ProcedureArgumentModel> outputParams = new();
         DynamicParameters queryParams = new();
         foreach (ProcedureArgumentModel parameter in parameters)
         {
-            object? value = null;
+            object? value;
             if (!parameterValues.TryGetValue(parameter.Name, out value))
             {
                 _logger.LogInformation("Ignoring param {paramName}", parameter.Name);
@@ -91,23 +89,11 @@ public class SqlServerDatabaseService : IDatabaseService, IDisposable
             string escapingAlias = $"{parameter.Name}_ESC";
             queryParams.Add(escapingAlias, value, direction: parameter.Direction);
             query = $"{query} @{parameter.Name} = @{escapingAlias},";
-
-            //if (parameter.Direction is ParameterDirection.InputOutput or ParameterDirection.Output)
-            //    outputParams.Add(parameter);
         }
 
         query = query.TrimEnd(',');
 
-        List<T>? result = (await _sqlConnection.QueryAsync<T>(query, queryParams))?.ToList();
-
-        //MethodInfo getOutputParamMethod = typeof(DynamicParameters).GetMethod("Get")!;
-        //outputParams.ForEach(param =>
-        //{
-        //    MethodInfo method = getOutputParamMethod.MakeGenericMethod(parameterValues[param.Name]?.GetType() ?? typeof(string));
-        //    parameterValues[param.Name] = method.Invoke(queryParams, new []{ param.Name });
-        //});
-
-        return result;
+        return (await _sqlConnection.QueryAsync<T>(query, queryParams))?.ToList();
     }
 
     private (string, DynamicParameters) EscapeParams(

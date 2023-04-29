@@ -1,6 +1,6 @@
 ﻿using Sqliste.Core.Contracts;
 
-namespace Sqliste.Core.SqlAnnotations;
+namespace Sqliste.Core.SqlAnnotations.OpenApi;
 
 public class ProducesSqlAnnotation : ISqlAnnotation
 {

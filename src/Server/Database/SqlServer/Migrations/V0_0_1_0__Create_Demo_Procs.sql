@@ -27,7 +27,10 @@ GO
 
 -- #Route("/api/books/{id}")
 -- #HttpGet
+-- #Accepts(Mime = "application/json")
 -- #Produces(Mime = "application/json")
+-- #Takes(Type = "book")
+-- #Responds(Type = "book", Status = 200)
 CREATE PROCEDURE [web].[p_books_details] 
     @id BIGINT,
     @body NVARCHAR(MAX) = NULL,

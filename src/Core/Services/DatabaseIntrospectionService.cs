@@ -8,6 +8,7 @@ using Sqliste.Core.SqlAnnotations;
 using Sqliste.Core.SqlAnnotations.HttpMethods;
 using Sqliste.Core.Utils.SqlAnnotations;
 using System.Text.RegularExpressions;
+using Sqliste.Core.SqlAnnotations.OpenApi;
 
 namespace Sqliste.Core.Services;
 
@@ -61,16 +62,6 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
                 procedure.Annotations.All(annotation => annotation is not MiddlewareSqlAnnotation)
             )
             .ToList();
-
-        //Func<ProcedureModel, ProcedureModel> formatMiddleware = middleware =>
-        //{
-        //    MiddlewareSqlAnnotation annotation = (MiddlewareSqlAnnotation) middleware
-        //        .Annotations
-        //        .First(annotation => annotation is MiddlewareSqlAnnotation);
-
-        //    middleware.Route = annotation.PathStarts;
-        //    return middleware;
-        //};
 
         Func<ProcedureModel, int> sortMiddleware = middleware =>
         {

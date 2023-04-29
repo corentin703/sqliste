@@ -20,6 +20,7 @@ public static class AddSqlServerExtensions
         services.AddScoped<IDatabaseMigrationService, SqlServerMigrationService>();
         services.AddScoped<IDatabaseIntrospectionService, SqlServerIntrospectionService>();
         services.AddScoped<IRequestHandlerService, SqlServerRequestHandlerService>();
+        services.AddScoped<IDatabaseOpenApiService, SqlServerOpenApiService>();
 
         services.AddTransient<DatabaseAppEventCleaningInvocable>();
 

@@ -40,7 +40,6 @@ public class Program
         builder.Services.AddSwaggerGen();
 
         builder.Services.AddScoped<IHttpModelsFactory, HttpModelsFactory>();
-        builder.Services.AddScoped<IDatabaseOpenApiService, DatabaseOpenApiService>();
         builder.Services.AddTransient<IDatabaseEventDispatcher, DatabaseEventDispatcher>();
         builder.Services.AddTransient<DatabaseEventInvocable>();
         
@@ -81,7 +80,7 @@ public class Program
         {
             IDatabaseMigrationService databaseMigrationService = 
                 scope.ServiceProvider.GetRequiredService<IDatabaseMigrationService>();
-            databaseMigrationService.Migrate();
+            //databaseMigrationService.Migrate();
 
             IDatabaseIntrospectionService databaseIntrospectionService =
                 scope.ServiceProvider.GetRequiredService<IDatabaseIntrospectionService>();
