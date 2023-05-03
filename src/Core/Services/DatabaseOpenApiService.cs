@@ -3,11 +3,11 @@ using Microsoft.OpenApi;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Models;
 using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Models;
+using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.SqlAnnotations.OpenApi;
 using System.Text.RegularExpressions;
-using Sqliste.Core.Models;
-using Sqliste.Core.Models.Http;
 
 namespace Sqliste.Core.Services;
 
@@ -18,7 +18,7 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
 
     private const string ResourceRouteRegexPattern = @"^(\/api)?\/(?<resource>\w+).*$";
 
-    public DatabaseOpenApiService(
+    protected DatabaseOpenApiService(
         ILogger<DatabaseOpenApiService> logger, 
         IDatabaseIntrospectionService databaseIntrospectionService
     )
@@ -72,7 +72,6 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
 
     private async Task<OpenApiOperation> GenerateOperationAsync(ProcedureModel procedure, CancellationToken cancellationToken)
     {
-        List<OpenApiTag> tags = GenerateTags(procedure.Route);
         OpenApiResponses responses = GenerateResponses(procedure);
         List<OpenApiParameter> parameters = new();
 
@@ -81,7 +80,9 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
             if (argument.IsSystemParam)
                 continue;
 
-            OpenApiTypeGetResponseModel openApiTypeInfo = await GetOpenApiTypeFromSqlTypeAsync(argument.SqlDataType, cancellationToken);
+            OpenApiTypeGetResponseModel openApiTypeInfo = 
+                await GetOpenApiTypeFromSqlTypeAsync(argument.SqlDataType, cancellationToken);
+
             parameters.Add(new OpenApiParameter()
             {
                 Name = argument.Name,
@@ -98,17 +99,16 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
         TakesSqlAnnotation? takesSqlAnnotation = procedure.Annotations
             .FirstOrDefault(annotation => annotation is TakesSqlAnnotation) as TakesSqlAnnotation;
 
-        List<AcceptsSqlAnnotation>? acceptAnnotations = procedure.Annotations
+        List<AcceptsSqlAnnotation> acceptAnnotations = procedure.Annotations
             .Where(annotation => annotation is AcceptsSqlAnnotation)
             .Cast<AcceptsSqlAnnotation>()
             .ToList();
 
         OpenApiOperation openApiOperation = new()
         {
-            Tags = tags,
+            Tags = GenerateTags(procedure.Route),
             Parameters = parameters,
             Responses = responses,
-            
         };
 
         if (takesSqlAnnotation == null) 
@@ -155,16 +155,18 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
             .Cast<RespondsSqlAnnotation>()
             .ToList();
 
-        List<ProducesSqlAnnotation>? produceAnnotations = procedure.Annotations
+        List<ProducesSqlAnnotation> produceAnnotations = procedure.Annotations
             .Where(annotation => annotation is ProducesSqlAnnotation)
             .Cast<ProducesSqlAnnotation>()
             .ToList();
 
-        OpenApiResponses responses = new OpenApiResponses();
+        OpenApiResponses responses = new();
         respondAnnotations.ForEach(responds =>
         {
             OpenApiResponse response = new();
-      
+
+            if (!string.IsNullOrEmpty(responds.Description))
+                response.Description = responds.Description;
 
             if (!string.IsNullOrEmpty(responds.Type))
             {
@@ -188,9 +190,6 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
                 response.Content = content;
             }
 
-            if (!string.IsNullOrEmpty(responds.Description))
-                response.Description = responds.Description;
-
             responses.Add(((int)responds.Status).ToString(), response);
         });
 
@@ -200,7 +199,6 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
     private List<OpenApiTag> GenerateTags(string route)
     {
         string resourceName = ExtractResource(route);
-        //bool isApi = IsApi(route);
 
         List<OpenApiTag> tags = new()
         {
@@ -209,14 +207,6 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
                 Name = resourceName,
             }
         };
-
-        //if (isApi)
-        //{
-        //    tags.Add(new OpenApiTag()
-        //    {
-        //        Name = "API",
-        //    });
-        //}
 
         return tags;
     }
@@ -239,11 +229,6 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
             return OperationType.Delete;
 
         return OperationType.Get;
-    }
-
-    private bool IsApi(string route)
-    {
-        return route.StartsWith("/api");
     }
 
     private string ExtractResource(string route)

@@ -70,15 +70,15 @@ public class DatabaseMiddleware
 
     private Dictionary<string, string>? ApplyHeaders(HttpContext context, HttpRequestModel response)
     {
-        if (response.Headers == null)
+        if (response.ResponseHeaders == null)
             return null;
 
         try
         {
             Dictionary<string, string>? headers =
-                JsonSerializer.Deserialize<Dictionary<string, string>>(response.Headers);
+                JsonSerializer.Deserialize<Dictionary<string, string>>(response.ResponseHeaders);
 
-            if (headers != null)
+            if (headers == null)
                 return null;
 
             foreach (KeyValuePair<string, string> header in headers)

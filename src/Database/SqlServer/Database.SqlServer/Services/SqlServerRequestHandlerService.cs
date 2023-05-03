@@ -43,15 +43,19 @@ public class SqlServerRequestHandlerService : RequestHandlerService
         }
         catch (SqlException sqlException)
         {
-            request.IsError = true;
-            request.ErrorMessage = sqlException.Message;
-            request.ErrorAttributes = new Dictionary<string, object>()
+            _logger.LogError("Error occurred during {procedure} execution : {error}", procedure.Name, sqlException);
+            return new HttpRequestModel()
             {
-                {"state", sqlException.State},
+                Error = new SqlErrorModel() 
+                {
+                    Message = sqlException.Message,
+                    Attributes = new Dictionary<string, object>()
+                    {
+                        {"state", sqlException.State},
+                    },
+                    RawException = sqlException,
+                },
             };
-            request.RawException = sqlException;
-
-            return request;
         }
     }
 }

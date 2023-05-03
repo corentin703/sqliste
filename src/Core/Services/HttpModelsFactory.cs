@@ -43,8 +43,8 @@ public class HttpModelsFactory : IHttpModelsFactory
             QueryString = queryString,
             Method = httpMethod,
             Body = bodyContent,
-            Cookies = JsonSerializer.Serialize(cookies),
-            Headers = JsonSerializer.Serialize(headers),
+            RequestCookies = JsonSerializer.Serialize(cookies),
+            RequestHeaders = JsonSerializer.Serialize(headers),
         };
 
         return requestModel;
@@ -69,9 +69,6 @@ public class HttpModelsFactory : IHttpModelsFactory
             return null;
 
         if (request.ContentLength == 0)
-            return null;
-
-        if (request.ContentType != MediaTypeNames.Application.Json)
             return null;
 
         try

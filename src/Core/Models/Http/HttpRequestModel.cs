@@ -1,39 +1,41 @@
 ﻿using DapperCodeFirstMappings.Attributes;
 using System.Net;
 using Sqliste.Core.Constants;
+using Sqliste.Core.Models.Sql;
 
 namespace Sqliste.Core.Models.Http;
 
+[DapperEntity]
 public class HttpRequestModel
 {
     [DapperColumn(SystemQueryParametersConstants.Body)]
     public string? Body { get; set; }
 
-    [DapperColumn(SystemQueryParametersConstants.Cookies)]
-    public string? Cookies { get; set; }
+    [DapperColumn(SystemQueryParametersConstants.RequestCookies)]
+    public string? RequestCookies { get; set; }
+
+    [DapperColumn(SystemQueryParametersConstants.ResponseCookies)]
+    public string? ResponseCookies { get; set; }
 
     [DapperColumn(SystemQueryParametersConstants.DataBag)]
     public string? DataBag { get; set; }
 
-    [DapperColumn(SystemQueryParametersConstants.Headers)]
-    public string? Headers { get; set; }
+    [DapperColumn(SystemQueryParametersConstants.RequestHeaders)]
+    public string? RequestHeaders { get; set; }
+
+    [DapperColumn(SystemQueryParametersConstants.ResponseHeaders)]
+    public string? ResponseHeaders { get; set; }
 
     [DapperColumn(SystemQueryParametersConstants.Next)]
     public bool Next { get; set; } = true;
+
+    [DapperColumn(SystemQueryParametersConstants.Status)]
+    public HttpStatusCode? Status { get; set; }
 
     public Dictionary<string, string> PathParams { get; set; } = new();
     public HttpMethod Method { get; set; } = HttpMethod.Get;
     public string Path { get; set; } = string.Empty;
     public string? QueryString { get; set; }
     public string? ContentType { get; set; }
-    public HttpStatusCode? Status { get; set; }
-
-    #region Error
-
-    public bool IsError { get; set; }
-    public string? ErrorMessage { get; set; }
-    public Dictionary<string, object>? ErrorAttributes { get; set; }
-    public Exception? RawException { get; set; }
-
-    #endregion
+    public SqlErrorModel? Error { get; set; }
 }

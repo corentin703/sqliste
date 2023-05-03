@@ -48,7 +48,7 @@ public abstract class RequestHandlerService : IRequestHandlerService
         if (!request.Next)
             return request;
 
-        if (!request.IsError)
+        if (request.Error == null)
             request = await ExecRequestAsync(request, procedure, cancellationToken) ?? request;
         
         await ExecMiddlewaresAsync(request, introspection.AfterMiddlewares, true, cancellationToken: cancellationToken);
@@ -70,7 +70,7 @@ public abstract class RequestHandlerService : IRequestHandlerService
 
         foreach (ProcedureModel middleware in middlewaresToRun)
         {
-            if (request.IsError && handleErrors)
+            if (request.Error != null && handleErrors)
             {
                 bool isErrorHandler = middleware.Arguments.Exists(arg =>
                     arg.Name is SystemQueryParametersConstants.Error or SystemQueryParametersConstants.Error);
@@ -85,13 +85,13 @@ public abstract class RequestHandlerService : IRequestHandlerService
             if (middlewareResponse == null)
                 continue;
 
-            if (!middlewareResponse.Next || (middlewareResponse.IsError && !handleErrors))
-                break;
-
             PatchResponse(request,  middlewareResponse);
+
+            if (!middlewareResponse.Next || (middlewareResponse.Error != null && !handleErrors))
+                break;
         }
 
-        if (handleErrors && request.RawException != null)
+        if (handleErrors && request.Error?.RawException != null)
         {
             request.Status = HttpStatusCode.InternalServerError;
             request.Body = JsonSerializer.Serialize(new
@@ -109,7 +109,7 @@ public abstract class RequestHandlerService : IRequestHandlerService
     {
         Dictionary<string, object?> sqlParams = GetParams(request, procedure);
         HttpRequestModel? response = await ExecProcedureAsync(request, procedure, sqlParams, cancellationToken);
-        PatchResponse(request,  response);
+        PatchResponse(request, response);
 
         return request;
     }
@@ -129,22 +129,23 @@ public abstract class RequestHandlerService : IRequestHandlerService
         if (rawResponse.Body != null)
             request.Body = rawResponse.Body;
 
-        if (rawResponse.Cookies != null)
-            request.Cookies = rawResponse.Cookies;
+        if (rawResponse.RequestCookies != null)
+            request.RequestCookies = rawResponse.RequestCookies;
 
         if (rawResponse.DataBag != null)
             request.DataBag = rawResponse.DataBag;
 
-        if (rawResponse.Headers != null)
-            request.Headers = rawResponse.Headers;
+        if (rawResponse.ResponseHeaders != null)
+            request.ResponseHeaders = rawResponse.ResponseHeaders;
 
-        if (request.IsError)
-        {
-            request.IsError = false;
-            request.ErrorMessage = null;
-            request.ErrorAttributes = null;
-            request.RawException = null;
-        }
+        if (!rawResponse.Next)
+            request.Next = false;
+
+        if (request.Error != rawResponse.Error)
+            request.Error = rawResponse.Error;
+
+        if (rawResponse.Status != null)
+            request.Status = rawResponse.Status;
     }
 
     private Dictionary<string, object?> GetParams(HttpRequestModel request, ProcedureModel procedure)
@@ -166,15 +167,17 @@ public abstract class RequestHandlerService : IRequestHandlerService
         }
 
         sqlParams.TryAdd(SystemQueryParametersConstants.Body, request.Body);
-        sqlParams.TryAdd(SystemQueryParametersConstants.Body, request.Body);
-        sqlParams.TryAdd(SystemQueryParametersConstants.Cookies, request.Cookies);
-        sqlParams.TryAdd(SystemQueryParametersConstants.DataBag, request.DataBag);
-        sqlParams.TryAdd(SystemQueryParametersConstants.Headers, request.Headers);
+        sqlParams.TryAdd(SystemQueryParametersConstants.RequestCookies, request.RequestCookies ?? "{}");
+        sqlParams.TryAdd(SystemQueryParametersConstants.ResponseCookies, request.ResponseCookies ?? "{}");
+        sqlParams.TryAdd(SystemQueryParametersConstants.DataBag, request.DataBag ?? "{}");
+        sqlParams.TryAdd(SystemQueryParametersConstants.RequestHeaders, request.RequestHeaders ?? "{}");
+        sqlParams.TryAdd(SystemQueryParametersConstants.ResponseHeaders, request.ResponseHeaders ?? "{}");
+        sqlParams.TryAdd(SystemQueryParametersConstants.PathParams, JsonSerializer.Serialize(request.PathParams));
 
-        if (request.IsError)
+        if (request.Error != null)
         {
-            sqlParams.TryAdd(SystemQueryParametersConstants.Error, request.ErrorMessage);
-            sqlParams.TryAdd(SystemQueryParametersConstants.ErrorAttributes, JsonSerializer.Serialize(request.ErrorAttributes));
+            sqlParams.TryAdd(SystemQueryParametersConstants.Error, request.Error.Message);
+            sqlParams.TryAdd(SystemQueryParametersConstants.ErrorAttributes, JsonSerializer.Serialize(request.Error.Attributes));
         }
 
         _logger.LogDebug("Added {paramCount} for {procedureName}", sqlParams.Count, procedure.Name);

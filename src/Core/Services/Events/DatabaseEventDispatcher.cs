@@ -1,7 +1,4 @@
-﻿using System.Reflection;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
-using Sqliste.Core.Attributes.Events;
+﻿using Microsoft.Extensions.Logging;
 using Sqliste.Core.Contracts.Services.Events;
 using Sqliste.Core.Models.Events;
 using Sqliste.Core.Utils.Events;
@@ -15,31 +12,10 @@ public class DatabaseEventDispatcher : IDatabaseEventDispatcher
 
     private readonly Dictionary<string, Type> _handlersByEventName;
 
-    //private const string HandlersByEventNameCacheKey =
-    //    $"{nameof(DatabaseEventDispatcher)}_{nameof(_handlersByEventName)}";
-
     public DatabaseEventDispatcher(ILogger<DatabaseEventDispatcher> logger, IServiceProvider serviceProvider)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
-
-        //Dictionary<string, Type>? handlersByEventName;
-        //if (!memoryCache.TryGetValue(HandlersByEventNameCacheKey, out handlersByEventName) || handlersByEventName == null)
-        //{
-        //    handlersByEventName = new Dictionary<string, Type>();
-        //    foreach (Type type in GetType().Assembly.GetTypes())
-        //    {
-        //        SystemEventHandlerAttribute? attribute = type.GetCustomAttribute<SystemEventHandlerAttribute>();
-        //        if (attribute == null)
-        //            continue;
-
-        //        if (!handlersByEventName.TryAdd(attribute.Name, type))
-        //            _logger.LogWarning("{handlerName} is a duplicate : ignoring", type.FullName ?? type.Name);
-        //    }
-
-        //    memoryCache.Set(HandlersByEventNameCacheKey, handlersByEventName);
-        //}
-
         _handlersByEventName = EventHandlersUtils.HandlersByEventName;
     }
 
@@ -56,7 +32,7 @@ public class DatabaseEventDispatcher : IDatabaseEventDispatcher
 
     private async Task DispatchSystemEvent(EventModel model)
     {
-        Type? handlerType = null;
+        Type? handlerType;
         if (!_handlersByEventName.TryGetValue(model.Name, out handlerType))
         {
             _logger.LogWarning("Corresponding event handler type not found for SYS event name {eventName}", model.Name);
@@ -79,6 +55,6 @@ public class DatabaseEventDispatcher : IDatabaseEventDispatcher
 
     private async Task DispatchCustomEvent(EventModel model)
     {
-
+        _logger.LogError("Custom event dispatching not implemented");
     }
 }

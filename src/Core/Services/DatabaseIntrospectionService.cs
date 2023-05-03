@@ -3,13 +3,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Exceptions.Procedures;
+using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.SqlAnnotations;
 using Sqliste.Core.SqlAnnotations.HttpMethods;
+using Sqliste.Core.SqlAnnotations.OpenApi;
 using Sqliste.Core.Utils.SqlAnnotations;
 using System.Text.RegularExpressions;
-using Sqliste.Core.Models.Http;
-using Sqliste.Core.SqlAnnotations.OpenApi;
 
 namespace Sqliste.Core.Services;
 
@@ -18,7 +18,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
     private const string ProcedureToRoutePattern = @"p_(?<resource>\w+)_(?<action>\w+)";
 
     protected readonly IDatabaseService DatabaseService;
-    protected readonly IMemoryCache MemoryCache;
+    private readonly IMemoryCache _memoryCache;
     private readonly ILogger<DatabaseIntrospectionService> _logger;
 
     private const string IntrospectionCacheKey = "DatabaseIntrospection";
@@ -26,7 +26,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
     protected DatabaseIntrospectionService(IDatabaseService databaseService, IMemoryCache memoryCache, ILogger<DatabaseIntrospectionService> logger)
     {
         DatabaseService = databaseService;
-        MemoryCache = memoryCache;
+        _memoryCache = memoryCache;
         _logger = logger;
     }
 
@@ -35,7 +35,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
         _logger.LogDebug("Reading database introspection");
         List<ProcedureModel>? procedures;
 
-        if (!MemoryCache.TryGetValue(IntrospectionCacheKey, out procedures) || procedures == null)
+        if (!_memoryCache.TryGetValue(IntrospectionCacheKey, out procedures) || procedures == null)
         {
             _logger.LogInformation("Starting database introspection");
             procedures = await QueryProceduresAsync(cancellationToken);
@@ -52,7 +52,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
             }
 
             procedures = procedures.OrderByDescending(procedure => procedure.RoutePattern.Length).ToList();
-            MemoryCache.Set(IntrospectionCacheKey, procedures);
+            _memoryCache.Set(IntrospectionCacheKey, procedures);
             _logger.LogInformation("Database introspection ended");
         }
         
@@ -100,7 +100,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
 
     public void Clear()
     {
-        MemoryCache.Remove(IntrospectionCacheKey);
+        _memoryCache.Remove(IntrospectionCacheKey);
     }
 
     protected abstract Task<List<ProcedureModel>> QueryProceduresAsync(CancellationToken cancellationToken = default);
