@@ -2,5 +2,13 @@
 
 public class HttpDeleteSqlAnnotation : HttpMethodBaseSqlAnnotation
 {
-    //
+    public HttpDeleteSqlAnnotation()
+    {
+        //
+    }
+
+    public HttpDeleteSqlAnnotation(string? id) : base(id)
+    {
+        //
+    }
 }
