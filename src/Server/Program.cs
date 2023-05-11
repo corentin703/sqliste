@@ -80,7 +80,7 @@ public class Program
         {
             IDatabaseMigrationService databaseMigrationService = 
                 scope.ServiceProvider.GetRequiredService<IDatabaseMigrationService>();
-            //databaseMigrationService.Migrate();
+            // databaseMigrationService.Migrate();
 
             IDatabaseIntrospectionService databaseIntrospectionService =
                 scope.ServiceProvider.GetRequiredService<IDatabaseIntrospectionService>();

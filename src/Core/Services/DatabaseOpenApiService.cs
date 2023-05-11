@@ -167,7 +167,9 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
 
             if (!string.IsNullOrEmpty(responds.Description))
                 response.Description = responds.Description;
-
+            else 
+                response.Description = string.Empty;
+            
             if (!string.IsNullOrEmpty(responds.Type))
             {
                 Dictionary<string, OpenApiMediaType> content = new();

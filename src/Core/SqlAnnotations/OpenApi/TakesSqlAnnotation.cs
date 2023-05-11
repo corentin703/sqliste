@@ -13,11 +13,11 @@ public class TakesSqlAnnotation : ISqlAnnotation
         //
     }
 
-    public TakesSqlAnnotation(bool required, string type, string description)
+    public TakesSqlAnnotation(string type, bool required, string description)
     {
+        Type = type;
         Required = required;
         Description = description;
-        Type = type;
     }
 
     public bool IsValid()
