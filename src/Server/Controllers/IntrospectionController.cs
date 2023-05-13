@@ -7,31 +7,31 @@ namespace Sqliste.Server.Controllers;
 [ApiController]
 public class IntrospectionController : ControllerBase
 {
-    private readonly IDatabaseIntrospectionService _databaseIntrospectionService;
-    private readonly IDatabaseOpenApiService _databaseOpenApiService;
+    private readonly ISqlisteIntrospectionService _sqlisteIntrospectionService;
+    private readonly ISqlisteOpenApiService _sqlisteOpenApiService;
 
-    public IntrospectionController(IDatabaseIntrospectionService databaseIntrospectionService, IDatabaseOpenApiService databaseOpenApiService)
+    public IntrospectionController(ISqlisteIntrospectionService sqlisteIntrospectionService, ISqlisteOpenApiService sqlisteOpenApiService)
     {
-        _databaseIntrospectionService = databaseIntrospectionService;
-        _databaseOpenApiService = databaseOpenApiService;
+        _sqlisteIntrospectionService = sqlisteIntrospectionService;
+        _sqlisteOpenApiService = sqlisteOpenApiService;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAllAsync(string d, CancellationToken cancellationToken)
-    {
-        return Ok(await _databaseIntrospectionService.IntrospectAsync(cancellationToken));
-    }
+    // [HttpGet]
+    // public async Task<IActionResult> GetAllAsync(string d, CancellationToken cancellationToken)
+    // {
+    //     return Ok(await _sqlisteIntrospectionService.IntrospectAsync(cancellationToken));
+    // }
 
     [HttpGet("swagger.json")]
     public async Task<IActionResult> GetOpenApiJson(CancellationToken cancellationToken)
     {
-        return Ok(await _databaseOpenApiService.GenerateOpenApiJsonAsync(cancellationToken));
+        return Ok(await _sqlisteOpenApiService.GenerateOpenApiJsonAsync(cancellationToken));
     }
-
-    [HttpDelete]
-    public IActionResult Delete()
-    {
-        _databaseIntrospectionService.Clear();
-        return NoContent();
-    }
+    
+    // [HttpDelete]
+    // public IActionResult Delete()
+    // {
+    //     _sqlisteIntrospectionService.Clear();
+    //     return NoContent();
+    // }
 }

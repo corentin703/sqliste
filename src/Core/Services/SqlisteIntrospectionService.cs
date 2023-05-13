@@ -10,24 +10,25 @@ using Sqliste.Core.SqlAnnotations.HttpMethods;
 using Sqliste.Core.SqlAnnotations.OpenApi;
 using Sqliste.Core.Utils.SqlAnnotations;
 using System.Text.RegularExpressions;
+using Sqliste.Core.Contracts.Services.Database;
 
 namespace Sqliste.Core.Services;
 
-public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionService
+public class SqlisteIntrospectionService : ISqlisteIntrospectionService
 {
     private const string ProcedureToRoutePattern = @"p_(?<resource>\w+)_(?<action>\w+)";
 
-    protected readonly IDatabaseService DatabaseService;
     private readonly IMemoryCache _memoryCache;
-    private readonly ILogger<DatabaseIntrospectionService> _logger;
+    private readonly ILogger<SqlisteIntrospectionService> _logger;
+    private readonly IDatabaseGatewayService _databaseGatewayService;
 
     private const string IntrospectionCacheKey = "DatabaseIntrospection";
 
-    protected DatabaseIntrospectionService(IDatabaseService databaseService, IMemoryCache memoryCache, ILogger<DatabaseIntrospectionService> logger)
+    public SqlisteIntrospectionService(IMemoryCache memoryCache, ILogger<SqlisteIntrospectionService> logger, IDatabaseGatewayService databaseGatewayService)
     {
-        DatabaseService = databaseService;
         _memoryCache = memoryCache;
         _logger = logger;
+        _databaseGatewayService = databaseGatewayService;
     }
 
     public virtual async Task<DatabaseIntrospectionModel> IntrospectAsync(CancellationToken cancellationToken = default)
@@ -38,7 +39,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
         if (!_memoryCache.TryGetValue(IntrospectionCacheKey, out procedures) || procedures == null)
         {
             _logger.LogInformation("Starting database introspection");
-            procedures = await QueryProceduresAsync(cancellationToken);
+            procedures = await _databaseGatewayService.QueryProceduresAsync(cancellationToken);
             foreach (ProcedureModel procedure in procedures)
             {
                 try
@@ -47,7 +48,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
                 }
                 catch (InvalidOperationException exception)
                 {
-                    _logger.LogWarning(exception.Message);
+                    _logger.LogWarning("Exception during introspection: {Exception}", exception.Message);
                 }
             }
 
@@ -103,17 +104,13 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
         _memoryCache.Remove(IntrospectionCacheKey);
     }
 
-    protected abstract Task<List<ProcedureModel>> QueryProceduresAsync(CancellationToken cancellationToken = default);
-
-    protected abstract Task<List<ProcedureArgumentModel>> QueryProceduresParamsAsync(string procedureName, CancellationToken cancellationToken = default);
-
     protected virtual async Task IntrospectProcedureAsync(
         ProcedureModel procedure,
         CancellationToken cancellationToken = default
     )
     {
         procedure.Annotations = SqlAnnotationParser.ParseSqlString(procedure.Content);
-        procedure.Arguments = await QueryProceduresParamsAsync(procedure.Name, cancellationToken);
+        procedure.Arguments = await _databaseGatewayService.QueryProceduresParamsAsync(procedure.Name, cancellationToken);
         SetupRoutePattern(procedure);
         SetupHttpMethod(procedure);
         SetupContentType(procedure);
@@ -131,21 +128,21 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
 
         string routePattern = procedure.Route;
 
-        _logger.LogDebug("Found {pattern} for {procedureName}", routePattern, procedure.Name);
+        _logger.LogDebug("Found {Pattern} for {ProcedureName}", routePattern, procedure.Name);
 
         List<string> paramsNames = new();
         foreach (Match paramMatch in Regex.Matches(routePattern, @"{(?<name>\w+\??)}"))
         {
             if (!paramMatch.Success)
             {
-                _logger.LogWarning("Can't read param for procedure {procedureName}", procedure.Name);
+                _logger.LogWarning("Can't read param for procedure {ProcedureName}", procedure.Name);
                 continue;
             }
 
             string paramName = paramMatch.Groups["name"].Value;
             if (string.IsNullOrEmpty(paramName))
             {
-                _logger.LogWarning("Reading empty param name for procedure {procedureName}", procedure.Name);
+                _logger.LogWarning("Reading empty param name for procedure {ProcedureName}", procedure.Name);
                 continue;
             }
 
@@ -153,7 +150,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
             if (procedureArgument == null)
             {
                 _logger.LogWarning(
-                    "Path param {paramName} not existing in procedure {procedureName}'s arguments", 
+                    "Path param {ParamName} not existing in procedure {ProcedureName}'s arguments", 
                     paramName, 
                     procedure.Name
                 );
@@ -165,7 +162,7 @@ public abstract class DatabaseIntrospectionService : IDatabaseIntrospectionServi
             routePattern = routePattern.Replace($"{{{paramName}}}", $@"(?<{paramName}>\w+)");
         }
 
-        _logger.LogDebug("Found {paramsCount} in {routePattern} for {procedureName}", paramsNames.Count, routePattern, procedure.Name);
+        _logger.LogDebug("Found {ParamsCount} in {RoutePattern} for {ProcedureName}", paramsNames.Count, routePattern, procedure.Name);
 
         procedure.RoutePattern = @$"^{routePattern}$";
         procedure.RouteParamNames = paramsNames;

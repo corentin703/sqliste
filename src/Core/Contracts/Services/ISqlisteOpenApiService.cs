@@ -2,7 +2,7 @@
 
 namespace Sqliste.Core.Contracts.Services;
 
-public interface IDatabaseOpenApiService
+public interface ISqlisteOpenApiService
 {
     Task<string> GenerateOpenApiJsonAsync(CancellationToken cancellationToken = default);
 }

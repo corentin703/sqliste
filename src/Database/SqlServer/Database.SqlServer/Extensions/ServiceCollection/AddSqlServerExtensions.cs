@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Contracts.Services.Events;
 using Sqliste.Database.SqlServer.Configuration;
 using Sqliste.Database.SqlServer.Jobs.Scheduling;
@@ -18,8 +19,7 @@ public static class AddSqlServerExtensions
 
         services.AddScoped<IDatabaseService, SqlServerDatabaseService>();
         services.AddScoped<IDatabaseMigrationService, SqlServerMigrationService>();
-        services.AddScoped<IDatabaseIntrospectionService, SqlServerIntrospectionService>();
-        services.AddScoped<IRequestHandlerService, SqlServerRequestHandlerService>();
+        services.AddScoped<IDatabaseGatewayService, SqlServerGetawayService>();
         services.AddScoped<IDatabaseOpenApiService, SqlServerOpenApiService>();
 
         services.AddTransient<DatabaseAppEventCleaningInvocable>();

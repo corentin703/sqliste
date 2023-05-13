@@ -6,41 +6,45 @@ using Sqliste.Core.Models.Sql;
 using Sqliste.Core.Utils.Uri;
 using System.Net;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using Sqliste.Core.Contracts.Services.Database;
 
 namespace Sqliste.Core.Services;
 
-public abstract class RequestHandlerService : IRequestHandlerService
+public class RequestHandlerService : IRequestHandlerService
 {
-    protected readonly IDatabaseIntrospectionService DatabaseIntrospectionService;
-    protected readonly IDatabaseService DatabaseService;
+    private readonly ISqlisteIntrospectionService _introspectionService;
     private readonly ILogger<RequestHandlerService> _logger;
-
-    protected RequestHandlerService(IDatabaseIntrospectionService databaseIntrospectionService, IDatabaseService databaseService, ILogger<RequestHandlerService> logger)
+    private readonly IDatabaseSessionAccessorService _sessionAccessorService;
+    private readonly IDatabaseGatewayService _databaseGatewayService;
+    
+    public RequestHandlerService(
+        ISqlisteIntrospectionService introspectionService,
+        ILogger<RequestHandlerService> logger, IDatabaseSessionAccessorService sessionAccessorService, IDatabaseGatewayService databaseGatewayService)
     {
-        DatabaseIntrospectionService = databaseIntrospectionService;
-        DatabaseService = databaseService;
+        _introspectionService = introspectionService;
         _logger = logger;
+        _sessionAccessorService = sessionAccessorService;
+        _databaseGatewayService = databaseGatewayService;
     }
 
     public async Task<HttpRequestModel> HandleRequestAsync(HttpRequestModel request, CancellationToken cancellationToken = default)
     {
-        DatabaseIntrospectionModel introspection = await DatabaseIntrospectionService.IntrospectAsync(cancellationToken);
+        DatabaseIntrospectionModel introspection = await _introspectionService.IntrospectAsync(cancellationToken);
 
         ProcedureModel? procedure = introspection.Endpoints
             .FirstOrDefault(route => IsMatchingRoute(request, route) && IsMatchingVerb(request, route));
 
         if (procedure == null)
         {
-            _logger.LogInformation("Matching procedure not found for path {path}", request.Path);
+            _logger.LogInformation("Matching procedure not found for path {Path}", request.Path);
             return new HttpRequestModel()
             {
                 Status = HttpStatusCode.NotFound,
             };
         }
 
-        _logger.LogDebug("Procedure found for path {path} : {procedureName}", request.Path, procedure.Name);
+        _logger.LogDebug("Procedure found for path {Path} : {ProcedureName}", request.Path, procedure.Name);
 
         request.PathParams = ParseUriParams(request.Path, procedure);
         
@@ -79,13 +83,13 @@ public abstract class RequestHandlerService : IRequestHandlerService
                     continue;
             }
 
-            Dictionary<string, object?> sqlParams = GetParams(request, middleware);
-            HttpRequestModel? middlewareResponse = await ExecProcedureAsync(request, middleware, sqlParams, cancellationToken);
+            Dictionary<string, object?> sqlParams = await GetParamsAsync(request, middleware, cancellationToken);
+            HttpRequestModel? middlewareResponse = await _databaseGatewayService.ExecProcedureAsync(request, middleware, sqlParams, cancellationToken);
 
             if (middlewareResponse == null)
                 continue;
 
-            PatchResponse(request,  middlewareResponse);
+            await PatchResponseAsync(request,  middlewareResponse, cancellationToken);
 
             if (!middlewareResponse.Next || (middlewareResponse.Error != null && !handleErrors))
                 break;
@@ -107,21 +111,14 @@ public abstract class RequestHandlerService : IRequestHandlerService
         CancellationToken cancellationToken = default
     )
     {
-        Dictionary<string, object?> sqlParams = GetParams(request, procedure);
-        HttpRequestModel? response = await ExecProcedureAsync(request, procedure, sqlParams, cancellationToken);
-        PatchResponse(request, response);
+        Dictionary<string, object?> sqlParams = await GetParamsAsync(request, procedure, cancellationToken);
+        HttpRequestModel? response = await _databaseGatewayService.ExecProcedureAsync(request, procedure, sqlParams, cancellationToken);
+        await PatchResponseAsync(request, response, cancellationToken);
 
         return request;
     }
 
-    protected abstract Task<HttpRequestModel?> ExecProcedureAsync(
-        HttpRequestModel request,
-        ProcedureModel procedure, 
-        Dictionary<string, object?> sqlParams, 
-        CancellationToken cancellationToken
-    );
-
-    private void PatchResponse(HttpRequestModel request, HttpRequestModel? rawResponse)
+    private async Task PatchResponseAsync(HttpRequestModel request, HttpRequestModel? rawResponse, CancellationToken cancellationToken)
     {
         if (rawResponse == null) 
             return;
@@ -146,9 +143,15 @@ public abstract class RequestHandlerService : IRequestHandlerService
 
         if (rawResponse.Status != null)
             request.Status = rawResponse.Status;
+
+        if (rawResponse.Session != null)
+        {
+            await _sessionAccessorService.SetSessionAsync(rawResponse.Session, cancellationToken);
+            request.Session = rawResponse.Session;
+        }
     }
 
-    private Dictionary<string, object?> GetParams(HttpRequestModel request, ProcedureModel procedure)
+    private async Task<Dictionary<string, object?>> GetParamsAsync(HttpRequestModel request, ProcedureModel procedure, CancellationToken cancellationToken)
     {
         Dictionary<string, object?> sqlParams = new();
 
@@ -174,13 +177,19 @@ public abstract class RequestHandlerService : IRequestHandlerService
         sqlParams.TryAdd(SystemQueryParametersConstants.ResponseHeaders, request.ResponseHeaders ?? "{}");
         sqlParams.TryAdd(SystemQueryParametersConstants.PathParams, JsonSerializer.Serialize(request.PathParams));
 
+        if (procedure.Arguments.Any(arg => arg.Name == SystemQueryParametersConstants.Session))
+        {
+            string? session = await _sessionAccessorService.GetSessionAsync(cancellationToken);
+            sqlParams.TryAdd(SystemQueryParametersConstants.Session, session);
+        }
+
         if (request.Error != null)
         {
             sqlParams.TryAdd(SystemQueryParametersConstants.Error, request.Error.Message);
             sqlParams.TryAdd(SystemQueryParametersConstants.ErrorAttributes, JsonSerializer.Serialize(request.Error.Attributes));
         }
 
-        _logger.LogDebug("Added {paramCount} for {procedureName}", sqlParams.Count, procedure.Name);
+        _logger.LogDebug("Added {ParamCount} for {ProcedureName}", sqlParams.Count, procedure.Name);
         return sqlParams;
     }
 
@@ -201,7 +210,7 @@ public abstract class RequestHandlerService : IRequestHandlerService
         Match paramsMatch = Regex.Match(uri, procedure.RoutePattern);
         if (!paramsMatch.Success)
         {
-            _logger.LogDebug("Path params's pattern didn't match for {procedureName} (path: {path})", procedure.Name, uri);
+            _logger.LogDebug("Path params's pattern didn't match for {ProcedureName} (path: {Path})", procedure.Name, uri);
             return pathParams;
         }
 
@@ -214,7 +223,7 @@ public abstract class RequestHandlerService : IRequestHandlerService
             pathParams.Add(paramName, paramValue);
         });
 
-        _logger.LogDebug("Found {paramCount} path params for {procedureName} (path: {path})", pathParams.Count, procedure.Name, uri);
+        _logger.LogDebug("Found {ParamCount} path params for {ProcedureName} (path: {Path})", pathParams.Count, procedure.Name, uri);
         return pathParams;
     }
 }

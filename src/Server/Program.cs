@@ -2,16 +2,16 @@ using Coravel;
 using Coravel.Queuing.Interfaces;
 using DapperCodeFirstMappings;
 using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Contracts.Services.Events;
-using Sqliste.Core.Jobs.Queuing;
+using Sqliste.Core.Extensions.ServiceCollection;
 using Sqliste.Core.Models.Sql;
-using Sqliste.Core.Services;
-using Sqliste.Core.Services.Events;
 using Sqliste.Database.SqlServer.Configuration;
 using Sqliste.Database.SqlServer.Extensions.Host;
 using Sqliste.Database.SqlServer.Extensions.ServiceCollection;
 using Sqliste.Server.Extensions.ServiceCollection;
 using Sqliste.Server.Middlewares;
+using Sqliste.Server.Session;
 
 namespace Sqliste.Server;
 
@@ -30,21 +30,28 @@ public class Program
         // Add services to the container.
         builder.Services.AddControllers();
         builder.Services.AddMemoryCache();
+        builder.Services.AddDistributedMemoryCache();
         builder.Services
             .AddQueue()
             .AddScheduler()
         ;
+        
+        builder.Services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromSeconds(10);
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
+        });
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
-
-        builder.Services.AddScoped<IHttpModelsFactory, HttpModelsFactory>();
-        builder.Services.AddTransient<IDatabaseEventDispatcher, DatabaseEventDispatcher>();
-        builder.Services.AddTransient<DatabaseEventInvocable>();
+        
+        builder.Services.AddSqlisteCore();
+        builder.Services.AddScoped<IDatabaseSessionAccessorService, DatabaseSessionAccessorService>();
+        builder.Services.AddSqlServer(builder.Configuration);
         
         builder.Services.AddDatabaseEventHandlers();
-        builder.Services.AddSqlServer(builder.Configuration);
 
         WebApplication app = builder.Build();
 
@@ -61,8 +68,10 @@ public class Program
 
         app.UseHttpsRedirection();
 
-        app.UseAuthorization();
+        // app.UseAuthorization();
 
+        app.UseSession();
+        
         app.UseMiddleware<DatabaseMiddleware>();
         app.MapControllers();
 
@@ -82,9 +91,9 @@ public class Program
                 scope.ServiceProvider.GetRequiredService<IDatabaseMigrationService>();
             // databaseMigrationService.Migrate();
 
-            IDatabaseIntrospectionService databaseIntrospectionService =
-                scope.ServiceProvider.GetRequiredService<IDatabaseIntrospectionService>();
-            await databaseIntrospectionService.IntrospectAsync();
+            ISqlisteIntrospectionService sqlisteIntrospectionService =
+                scope.ServiceProvider.GetRequiredService<ISqlisteIntrospectionService>();
+            await sqlisteIntrospectionService.IntrospectAsync();
         }
 
         IDatabaseEventWatcher databaseEventWatcher = app.Services.GetRequiredService<IDatabaseEventWatcher>();

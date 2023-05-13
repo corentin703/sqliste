@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Http;
-using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
 
@@ -80,7 +79,7 @@ public class HttpModelsFactory : IHttpModelsFactory
         }
         catch(Exception exception) 
         {
-            _logger.LogError(exception.ToString());
+            _logger.LogError(exception: exception, "Unable to parse body");
             return null;
         }
     }

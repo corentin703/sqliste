@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Database.SqlServer.Configuration;
 
 namespace Sqliste.Database.SqlServer.Services;

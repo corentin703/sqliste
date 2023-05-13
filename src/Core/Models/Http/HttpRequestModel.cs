@@ -31,6 +31,9 @@ public class HttpRequestModel
 
     [DapperColumn(SystemQueryParametersConstants.Status)]
     public HttpStatusCode? Status { get; set; }
+    
+    [DapperColumn(SystemQueryParametersConstants.Session)]
+    public string? Session { get; set; }
 
     public Dictionary<string, string> PathParams { get; set; } = new();
     public HttpMethod Method { get; set; } = HttpMethod.Get;

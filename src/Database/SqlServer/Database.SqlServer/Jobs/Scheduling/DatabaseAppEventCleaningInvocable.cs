@@ -1,6 +1,7 @@
 ﻿using Coravel.Invocable;
 using Microsoft.Extensions.Logging;
 using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Database.SqlServer.SqlQueries;
 
 namespace Sqliste.Database.SqlServer.Jobs.Scheduling;

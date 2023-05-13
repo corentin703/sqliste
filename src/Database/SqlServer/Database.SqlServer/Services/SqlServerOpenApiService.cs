@@ -1,30 +1,24 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
-using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Models;
-using Sqliste.Core.Services;
 using Sqliste.Database.SqlServer.SqlQueries;
 
 namespace Sqliste.Database.SqlServer.Services;
 
-public class SqlServerOpenApiService : DatabaseOpenApiService
+public class SqlServerOpenApiService : IDatabaseOpenApiService
 {
     private readonly IDatabaseService _databaseService;
     private readonly ILogger<SqlServerOpenApiService> _logger;
 
-    public SqlServerOpenApiService(
-        ILogger<DatabaseOpenApiService> logger, 
-        IDatabaseIntrospectionService databaseIntrospectionService, 
-        IDatabaseService databaseService, 
-        ILogger<SqlServerOpenApiService> logger1
-    ) : base(logger, databaseIntrospectionService)
+    public SqlServerOpenApiService(IDatabaseService databaseService, ILogger<SqlServerOpenApiService> logger)
     {
         _databaseService = databaseService;
-        _logger = logger1;
+        _logger = logger;
     }
 
-    protected override async Task<OpenApiDocument> GetDocumentFromDatabaseAsync(CancellationToken cancellationToken)
+    public async Task<OpenApiDocument> GetDocumentFromDatabaseAsync(CancellationToken cancellationToken)
     {
         (string query, object args) = IntrospectionSqlQueries.GetOpenApiDocumentQuery();
 
@@ -47,24 +41,24 @@ public class SqlServerOpenApiService : DatabaseOpenApiService
 
             foreach (OpenApiError openApiError in diagnostic.Errors)
             {
-                _logger.LogError("Error during OpenApi schema parsing : {error} - {pointer}", openApiError.Message, openApiError.Pointer);
+                _logger.LogError("Error during OpenApi schema parsing : {Error} - {Pointer}", openApiError.Message, openApiError.Pointer);
             }
 
             foreach (OpenApiError openApiWarning in diagnostic.Warnings)
             {
-                _logger.LogWarning("Warning during OpenApi schema parsing : {error} - {pointer}", openApiWarning.Message, openApiWarning.Pointer);
+                _logger.LogWarning("Warning during OpenApi schema parsing : {Error} - {Pointer}", openApiWarning.Message, openApiWarning.Pointer);
             }
 
             return document;
         }
         catch (Exception exception)
         {
-            _logger.LogError("Can't parse OpenApi components : returning empty one {exception}", exception);
+            _logger.LogError(exception: exception, "Can't parse OpenApi components");
             return new OpenApiDocument();
         }
     }
 
-    protected override async Task<OpenApiTypeGetResponseModel> GetOpenApiTypeFromSqlTypeAsync(string sqlType, CancellationToken cancellationToken)
+    public async Task<OpenApiTypeGetResponseModel> GetOpenApiTypeFromSqlTypeAsync(string sqlType, CancellationToken cancellationToken)
     {
         (string query, object args) = IntrospectionSqlQueries.GetOpenApiTypeFromSqlQuery(sqlType);
         List<OpenApiTypeGetResponseModel>? result = await _databaseService.QueryAsync<OpenApiTypeGetResponseModel>(query, args, cancellationToken);

@@ -8,29 +8,31 @@ using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.SqlAnnotations.OpenApi;
 using System.Text.RegularExpressions;
+using Sqliste.Core.Contracts.Services.Database;
 
 namespace Sqliste.Core.Services;
 
-public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
+public class SqlisteOpenApiService : ISqlisteOpenApiService
 {
-    private readonly ILogger<DatabaseOpenApiService> _logger;
-    private readonly IDatabaseIntrospectionService _databaseIntrospectionService;
+    private readonly ILogger<SqlisteOpenApiService> _logger;
+    private readonly ISqlisteIntrospectionService _sqlisteIntrospectionService;
+    private readonly IDatabaseOpenApiService _databaseOpenApiService;
 
     private const string ResourceRouteRegexPattern = @"^(\/api)?\/(?<resource>\w+).*$";
 
-    protected DatabaseOpenApiService(
-        ILogger<DatabaseOpenApiService> logger, 
-        IDatabaseIntrospectionService databaseIntrospectionService
-    )
+    public SqlisteOpenApiService(
+        ILogger<SqlisteOpenApiService> logger, 
+        ISqlisteIntrospectionService sqlisteIntrospectionService, IDatabaseOpenApiService databaseOpenApiService)
     {
         _logger = logger;
-        _databaseIntrospectionService = databaseIntrospectionService;
+        _sqlisteIntrospectionService = sqlisteIntrospectionService;
+        _databaseOpenApiService = databaseOpenApiService;
     }
 
     public async Task<string> GenerateOpenApiJsonAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Generating OpenApiDocument");
-        DatabaseIntrospectionModel introspection = await _databaseIntrospectionService.IntrospectAsync(cancellationToken);
+        DatabaseIntrospectionModel introspection = await _sqlisteIntrospectionService.IntrospectAsync(cancellationToken);
 
         OpenApiPaths paths = new();
         foreach (ProcedureModel procedure in introspection.Endpoints)
@@ -56,19 +58,17 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
             }
         }
 
-        OpenApiDocument openApiDocument = await GetDocumentFromDatabaseAsync(cancellationToken);
+        OpenApiDocument openApiDocument = await _databaseOpenApiService.GetDocumentFromDatabaseAsync(cancellationToken);
         openApiDocument.Paths = paths;
 
+        openApiDocument.Info.Version = "3.0.0"; // Enforcing OpenApi v3
+        
         _logger.LogDebug("OpenApi document generated");
         string openApiJson = openApiDocument.SerializeAsJson(OpenApiSpecVersion.OpenApi3_0);
         _logger.LogDebug("OpenApi document serialized as v3");
 
         return openApiJson;
     }
-
-    protected abstract Task<OpenApiDocument> GetDocumentFromDatabaseAsync(CancellationToken cancellationToken);
-
-    protected abstract Task<OpenApiTypeGetResponseModel> GetOpenApiTypeFromSqlTypeAsync(string sqlType, CancellationToken cancellationToken);
 
     private async Task<OpenApiOperation> GenerateOperationAsync(ProcedureModel procedure, CancellationToken cancellationToken)
     {
@@ -81,7 +81,7 @@ public abstract class DatabaseOpenApiService : IDatabaseOpenApiService
                 continue;
 
             OpenApiTypeGetResponseModel openApiTypeInfo = 
-                await GetOpenApiTypeFromSqlTypeAsync(argument.SqlDataType, cancellationToken);
+                await _databaseOpenApiService.GetOpenApiTypeFromSqlTypeAsync(argument.SqlDataType, cancellationToken);
 
             parameters.Add(new OpenApiParameter()
             {

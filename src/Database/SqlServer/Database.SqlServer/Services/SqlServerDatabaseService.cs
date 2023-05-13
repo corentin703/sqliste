@@ -2,7 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Database.SqlServer.Configuration;
 
@@ -27,7 +27,7 @@ public class SqlServerDatabaseService : IDatabaseService, IDisposable
     {
         (string formattedQuery, DynamicParameters queryParams) = EscapeParams(query, parameters);
 
-        _logger.LogDebug("Running query {query} with {paramCount} args", query, parameters.Count);
+        _logger.LogDebug("Running query {Query} with {ParamCount} args", query, parameters.Count);
         IEnumerable<dynamic>? result = await _sqlConnection.QueryAsync(formattedQuery, queryParams);
         return result?.Cast<IDictionary<string, object>>().ToList();
     }
@@ -38,7 +38,7 @@ public class SqlServerDatabaseService : IDatabaseService, IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("Running query {query} with {paramCount} args", query, parameters.Count);
+        _logger.LogDebug("Running query {Query} with {ParamCount} args", query, parameters.Count);
         (string formattedQuery, DynamicParameters queryParams) = EscapeParams(query, parameters);
         return (await _sqlConnection.QueryAsync<T>(formattedQuery, queryParams))?.ToList();
     }
@@ -49,7 +49,7 @@ public class SqlServerDatabaseService : IDatabaseService, IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("Running query {query}", query);
+        _logger.LogDebug("Running query {Query}", query);
         IEnumerable<dynamic>? result = await _sqlConnection.QueryAsync(query, parameters);
         return result?.Cast<IDictionary<string, object>>().ToList();
     }
@@ -60,7 +60,7 @@ public class SqlServerDatabaseService : IDatabaseService, IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("Running query {query}", query);
+        _logger.LogDebug("Running query {Query}", query);
         return (await _sqlConnection.QueryAsync<T>(query, parameters))?.ToList();
     }
 
@@ -71,7 +71,7 @@ public class SqlServerDatabaseService : IDatabaseService, IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        _logger.LogDebug("Running procedure {query} with {paramsCount}", procedure, parameterValues.Count);
+        _logger.LogDebug("Running procedure {Query} with {ParamsCount}", procedure, parameterValues.Count);
 
         string query = $"EXEC {procedure}";
 
@@ -81,11 +81,11 @@ public class SqlServerDatabaseService : IDatabaseService, IDisposable
             object? value;
             if (!parameterValues.TryGetValue(parameter.Name, out value))
             {
-                _logger.LogInformation("Ignoring param {paramName}", parameter.Name);
+                _logger.LogInformation("Ignoring param {ParamName}", parameter.Name);
                 continue;
             }
 
-            _logger.LogDebug("Param {paramName} added", parameter.Name);
+            _logger.LogDebug("Param {ParamName} added", parameter.Name);
             string escapingAlias = $"{parameter.Name}_ESC";
             queryParams.Add(escapingAlias, value, direction: parameter.Direction);
             query = $"{query} @{parameter.Name} = @{escapingAlias},";

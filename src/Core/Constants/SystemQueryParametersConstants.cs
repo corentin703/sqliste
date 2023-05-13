@@ -13,4 +13,5 @@ public static class SystemQueryParametersConstants
     public const string Error = "error";
     public const string ErrorAttributes = "error_attributes";
     public const string Status = "status";
+    public const string Session = "session";
 }

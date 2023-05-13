@@ -1,4 +1,4 @@
-﻿namespace Sqliste.Core.Contracts.Services;
+﻿namespace Sqliste.Core.Contracts.Services.Database;
 
 public interface IDatabaseMigrationService
 {
