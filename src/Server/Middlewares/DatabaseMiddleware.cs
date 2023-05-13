@@ -5,7 +5,8 @@ using Sqliste.Core.Models.Http;
 using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using Microsoft.IdentityModel.Tokens;
+using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
 
 namespace Sqliste.Server.Middlewares;
 
@@ -35,7 +36,7 @@ public class DatabaseMiddleware
             return;
         }
 
-        _logger.LogDebug("Handling request for path {path}", context.Request.Path);
+        _logger.LogDebug("Handling request for path {Path}", context.Request.Path);
         IRequestHandlerService requestHandlerService = context.RequestServices.GetRequiredService<IRequestHandlerService>();
         IHttpModelsFactory httpModelsFactory = context.RequestServices.GetRequiredService<IHttpModelsFactory>();
 
@@ -50,11 +51,13 @@ public class DatabaseMiddleware
         CancellationToken cancellationToken = default
     )
     {
-        Dictionary<string, string>? headers = ApplyHeaders(context, response);
+        ApplyResponseCookies(context, response);
+        ApplyResponseHeaders(context, response);
 
+        // Set status and Content-Type
         if (response.Body != null)
         {
-            if (headers == null || !headers.ContainsKey(HeaderNames.ContentType))
+            if (context.Response.Headers[HeaderNames.ContentType].IsNullOrEmpty())
                 context.Response.Headers[HeaderNames.ContentType] = response.ContentType ?? MediaTypeNames.Text.Plain;
 
             response.Status ??= HttpStatusCode.OK;
@@ -64,14 +67,15 @@ public class DatabaseMiddleware
 
         context.Response.StatusCode = (int)response.Status;
 
+        // Write body if not null
         if (response.Body != null)
             await context.Response.WriteAsync(response.Body, cancellationToken: cancellationToken);
     }
 
-    private Dictionary<string, string>? ApplyHeaders(HttpContext context, HttpRequestModel response)
+    private void ApplyResponseHeaders(HttpContext context, HttpRequestModel response)
     {
         if (response.ResponseHeaders == null)
-            return null;
+            return;
 
         try
         {
@@ -79,19 +83,52 @@ public class DatabaseMiddleware
                 JsonSerializer.Deserialize<Dictionary<string, string>>(response.ResponseHeaders);
 
             if (headers == null)
-                return null;
+                return;
 
             foreach (KeyValuePair<string, string> header in headers)
             {
                 context.Response.Headers[header.Key] = header.Value;
             }
-
-            return headers;
         }
         catch (Exception exception)
         {
-            _logger.LogError("Error during headers parsing {exception}", exception);
-            return null;
+            _logger.LogError(exception: exception, "Error during headers parsing");
+        }
+    }
+
+    private void ApplyResponseCookies(HttpContext context, HttpRequestModel response)
+    {
+        if (string.IsNullOrEmpty(response.ResponseCookies))
+            return;
+
+        List<HttpCookieModel>? cookieModels;
+
+        try
+        {
+            cookieModels = JsonSerializer.Deserialize<List<HttpCookieModel>>(response.ResponseCookies);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception: exception, "Failed to parse response cookies");
+            cookieModels = null;
+        }
+        
+        if (cookieModels == null)
+            return;
+
+        foreach (HttpCookieModel cookieModel in cookieModels)
+        {
+            context.Response.Cookies.Append(cookieModel.Name, cookieModel.Value, new CookieOptions()
+            {
+                Domain = cookieModel.Domain,
+                Path = cookieModel.Path,
+                Secure = cookieModel.Secure ?? false,
+                SameSite = cookieModel.SameSite ?? SameSiteMode.Unspecified,
+                HttpOnly = cookieModel.HttpOnly ?? false,
+                IsEssential = cookieModel.IsEssential ?? false,
+                Expires = cookieModel.Expires,
+                MaxAge = cookieModel.MaxAge,
+            });
         }
     }
 }
