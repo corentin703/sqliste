@@ -18,6 +18,8 @@ namespace Sqliste.Server;
 
 public class Program
 {
+    private const string AllowedOriginRuleName = "AllowedOrigins";
+    
     public static async Task Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
@@ -31,6 +33,9 @@ public class Program
             
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+            // builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            // builder.Configuration.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+            
             DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(ProcedureModel).Assembly);
             DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(SqlServerConfiguration).Assembly);
             DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(Program).Assembly);
@@ -45,8 +50,8 @@ public class Program
             builder.Services
                 .AddQueue()
                 .AddScheduler()
-                ;
-
+            ;
+            
             builder.Services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromSeconds(10);
@@ -92,6 +97,15 @@ public class Program
             // app.UseAuthorization();
 
             app.UseSession();
+
+            string[]? allowedOrigins = app.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+            if (allowedOrigins != null)
+            {
+                app.UseCors(options =>
+                {
+                    options.WithOrigins(allowedOrigins);
+                });
+            }
 
             app.UseMiddleware<DatabaseMiddleware>();
             app.MapControllers();
