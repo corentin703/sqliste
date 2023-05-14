@@ -1,7 +1,7 @@
 using Coravel;
 using Coravel.Queuing.Interfaces;
 using DapperCodeFirstMappings;
-using Sqliste.Core.Contracts.Services;
+using Serilog;
 using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Contracts.Services.Events;
 using Sqliste.Core.Extensions.Host;
@@ -20,83 +20,110 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
-        DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(ProcedureModel).Assembly);
-        DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(SqlServerConfiguration).Assembly);
-        DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(Program).Assembly);
-
-        builder.Services.AddHttpContextAccessor();
-        builder.Services.AddSingleton<ILogger>(x => x.GetRequiredService<ILogger<Program>>());
-
-        // Add services to the container.
-        builder.Services.AddControllers();
-        builder.Services.AddMemoryCache();
-        builder.Services.AddDistributedMemoryCache();
-        builder.Services
-            .AddQueue()
-            .AddScheduler()
-        ;
+        Log.Logger = new LoggerConfiguration()
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateBootstrapLogger();
         
-        builder.Services.AddSession(options =>
+        try
         {
-            options.IdleTimeout = TimeSpan.FromSeconds(10);
-            options.Cookie.HttpOnly = true;
-            options.Cookie.IsEssential = true;
-        });
+            Log.Logger.Information("SQListe is starting up !");
+            
+            WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-        
-        builder.Services.AddSqlisteCore();
-        builder.Services.AddScoped<IDatabaseSessionAccessorService, DatabaseSessionAccessorService>();
-        builder.Services.AddSqlServer(builder.Configuration);
-        
-        builder.Services.AddDatabaseEventHandlers();
+            DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(ProcedureModel).Assembly);
+            DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(SqlServerConfiguration).Assembly);
+            DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(Program).Assembly);
 
-        WebApplication app = builder.Build();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddSingleton<Microsoft.Extensions.Logging.ILogger>(x => x.GetRequiredService<ILogger<Program>>());
 
-        app.UseHttpLogging();
-        
-        // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI(options =>
+            // Add services to the container.
+            builder.Services.AddControllers();
+            builder.Services.AddMemoryCache();
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services
+                .AddQueue()
+                .AddScheduler()
+                ;
+
+            builder.Services.AddSession(options =>
             {
-                options.SwaggerEndpoint("/api/sqliste/Introspection/swagger.json", "SQListe");
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "SQListe WS");
+                options.IdleTimeout = TimeSpan.FromSeconds(10);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
             });
-        }
 
-        app.UseHttpsRedirection();
+            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
 
-        // app.UseAuthorization();
+            builder.Services.AddSqlisteCore();
+            builder.Services.AddScoped<IDatabaseSessionAccessorService, DatabaseSessionAccessorService>();
+            builder.Services.AddSqlServer(builder.Configuration);
 
-        app.UseSession();
-        
-        app.UseMiddleware<DatabaseMiddleware>();
-        app.MapControllers();
+            builder.Services.AddDatabaseEventHandlers();
 
-        app.Services
-            .ConfigureQueue()
-            .OnError(exception =>
+            builder.Host.UseSerilog((context, services, configuration) =>
+                configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Services(services)
+                    .Enrich.FromLogContext()
+                    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} - {Level} ({SourceContext})] {Message}{NewLine}{Exception}")
+            );
+
+            WebApplication app = builder.Build();
+
+            app.UseSerilogRequestLogging();
+
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
             {
-                app.Services
-                    .GetRequiredService<ILogger<IQueue>>()
-                    .LogError(exception: exception, "An error occurred during queued task"); 
-            })
-            .LogQueuedTaskProgress(app.Services.GetRequiredService<ILogger<IQueue>>());
+                app.UseSwagger();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/api/sqliste/Introspection/swagger.json", "SQListe");
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "SQListe WS");
+                });
+            }
 
-        await app.RunMigrationsAsync();
-        await app.RunInitialIntrospectionAsync();
+            app.UseHttpsRedirection();
 
-        IDatabaseEventWatcher databaseEventWatcher = app.Services.GetRequiredService<IDatabaseEventWatcher>();
-        databaseEventWatcher.Init();
+            // app.UseAuthorization();
 
-        app.UseSqlServer();
+            app.UseSession();
 
-        await app.RunAsync();
+            app.UseMiddleware<DatabaseMiddleware>();
+            app.MapControllers();
+
+            app.Services
+                .ConfigureQueue()
+                .OnError(exception =>
+                {
+                    app.Services
+                        .GetRequiredService<ILogger<IQueue>>()
+                        .LogError(exception: exception, "An error occurred during queued task");
+                })
+                .LogQueuedTaskProgress(app.Services.GetRequiredService<ILogger<IQueue>>());
+
+            await app.RunMigrationsAsync();
+            await app.RunInitialIntrospectionAsync();
+
+            IDatabaseEventWatcher databaseEventWatcher = app.Services.GetRequiredService<IDatabaseEventWatcher>();
+            databaseEventWatcher.Init();
+
+            app.UseSqlServer();
+
+            await app.RunAsync();
+        }
+        catch (Exception exception)
+        {
+            Log.Fatal(exception: exception, "Application terminated unexpectedly");
+        }
+        finally
+        {
+            Log.Logger.Information("SQListe is terminating...");
+            await Log.CloseAndFlushAsync();
+        }
     }
 }
