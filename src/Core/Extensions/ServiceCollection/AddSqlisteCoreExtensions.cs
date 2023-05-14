@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Sqliste.Core.Contracts.Services;
-using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Contracts.Services.Events;
 using Sqliste.Core.Jobs.Queuing;
 using Sqliste.Core.Services;
@@ -13,6 +12,7 @@ public static class AddSqlisteCoreExtensions
     public static IServiceCollection AddSqlisteCore(this IServiceCollection services)
     {
         services.AddScoped<IHttpModelsFactory, HttpModelsFactory>();
+        services.AddScoped<IProcedureResolverService, ProcedureResolverService>();
         services.AddScoped<ISqlisteIntrospectionService, SqlisteIntrospectionService>();
         services.AddScoped<IRequestHandlerService, RequestHandlerService>();
         services.AddScoped<ISqlisteOpenApiService, SqlisteOpenApiService>();

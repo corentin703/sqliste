@@ -4,6 +4,9 @@ using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Sqliste.Core.Models.Pipeline;
+using Sqliste.Core.Models.Sql;
 using Sqliste.Core.Utils.Uri;
 
 namespace Sqliste.Core.Services;
@@ -12,14 +15,16 @@ public class HttpModelsFactory : IHttpModelsFactory
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<HttpModelsFactory> _logger;
-
-    public HttpModelsFactory(IHttpContextAccessor httpContextAccessor, ILogger<HttpModelsFactory> logger)
+    private readonly IProcedureResolverService _procedureResolver;
+    
+    public HttpModelsFactory(IHttpContextAccessor httpContextAccessor, ILogger<HttpModelsFactory> logger, IProcedureResolverService procedureResolver)
     {
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
+        _procedureResolver = procedureResolver;
     }
 
-    public async Task<HttpRequestModel> BuildRequestModelAsync(CancellationToken cancellationToken = default)
+    public async Task<PipelineBag> BuildRequestModelAsync(CancellationToken cancellationToken = default)
     {
         HttpRequest request = _httpContextAccessor.HttpContext.Request;
 
@@ -37,18 +42,36 @@ public class HttpModelsFactory : IHttpModelsFactory
             : null
         ;
 
-        HttpRequestModel requestModel = new HttpRequestModel()
+        Dictionary<string, string> queryParams = queryString != null
+            ? UriQueryParamsParser.ParseQueryParams(queryString)
+            : new()
+        ;
+
+        ProcedureModel? procedure = await _procedureResolver.ResolveProcedureAsync(request.Path, httpMethod, cancellationToken);
+        
+        Dictionary<string, string> pathParams = procedure != null 
+            ? ParseUriParams(request.Path, procedure)
+            : new();
+        
+        PipelineRequestBag requestModel = new()
         {
             Path = request.Path,
             QueryString = queryString,
-            QueryParams = queryString != null ? UriQueryParamsParser.ParseQueryParams(queryString) : new(),
+            QueryParams = queryParams,
+            PathParams = pathParams,
             Method = httpMethod,
-            RequestBody = bodyContent,
-            RequestCookies = JsonSerializer.Serialize(cookies),
-            RequestHeaders = JsonSerializer.Serialize(headers),
+            Body = bodyContent,
+            Cookies = JsonSerializer.Serialize(cookies),
+            Headers = JsonSerializer.Serialize(headers),
         };
 
-        return requestModel;
+        PipelineBag pipelineModel = new PipelineBag()
+        {
+            Request = requestModel,
+            Procedure = procedure,
+        };
+
+        return pipelineModel;
     }
 
     private HttpMethod GetHttpMethodFromString(string method)
@@ -84,5 +107,29 @@ public class HttpModelsFactory : IHttpModelsFactory
             _logger.LogError(exception: exception, "Unable to parse body");
             return null;
         }
+    }
+    
+    private Dictionary<string, string> ParseUriParams(string uri, ProcedureModel procedure)
+    {
+        Dictionary<string, string> pathParams = new();
+
+        Match paramsMatch = Regex.Match(uri, procedure.RoutePattern);
+        if (!paramsMatch.Success)
+        {
+            _logger.LogDebug("Path params's pattern didn't match for {ProcedureName} (path: {Path})", procedure.Name, uri);
+            return pathParams;
+        }
+
+        procedure.RouteParamNames.ForEach(paramName =>
+        {
+            string paramValue = paramsMatch.Groups[paramName].Value;
+            if (string.IsNullOrEmpty(paramValue))
+                return;
+
+            pathParams.Add(paramName, paramValue);
+        });
+
+        _logger.LogDebug("Found {ParamCount} path params for {ProcedureName} (path: {Path})", pathParams.Count, procedure.Name, uri);
+        return pathParams;
     }
 }

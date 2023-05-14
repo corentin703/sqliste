@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Models.Http;
+using Sqliste.Core.Models.Pipeline;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Database.SqlServer.Models;
 using Sqliste.Database.SqlServer.SqlQueries;
@@ -20,7 +21,7 @@ public class SqlServerGetawayService : IDatabaseGatewayService
         _databaseService = databaseService;
     }
 
-    public async Task<HttpRequestModel?> ExecProcedureAsync(HttpRequestModel request, ProcedureModel procedure, Dictionary<string, object?> sqlParams,
+    public async Task<PipelineResponseBag?> ExecProcedureAsync(PipelineRequestBag request, ProcedureModel procedure, Dictionary<string, object?> sqlParams,
         CancellationToken cancellationToken)
     {
         try
@@ -30,7 +31,7 @@ public class SqlServerGetawayService : IDatabaseGatewayService
                 procedure.Name,
                 sqlParams.Count
             );
-            List<HttpRequestModel>? result = await _databaseService.ExecAsync<HttpRequestModel>(
+            List<PipelineResponseBag>? result = await _databaseService.ExecAsync<PipelineResponseBag>(
                 $"{procedure.Schema}.{procedure.Name}",
                 procedure.Arguments,
                 sqlParams,
@@ -48,7 +49,7 @@ public class SqlServerGetawayService : IDatabaseGatewayService
         catch (SqlException sqlException)
         {
             _logger.LogError(exception: sqlException, "Error occurred during {Procedure} execution", procedure.Name);
-            return new HttpRequestModel()
+            return new PipelineResponseBag()
             {
                 Error = new SqlErrorModel() 
                 {

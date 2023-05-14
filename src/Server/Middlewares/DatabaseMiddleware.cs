@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
+using Sqliste.Core.Models.Pipeline;
 using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
 
 namespace Sqliste.Server.Middlewares;
@@ -40,47 +41,47 @@ public class DatabaseMiddleware
         IRequestHandlerService requestHandlerService = context.RequestServices.GetRequiredService<IRequestHandlerService>();
         IHttpModelsFactory httpModelsFactory = context.RequestServices.GetRequiredService<IHttpModelsFactory>();
 
-        HttpRequestModel request = await httpModelsFactory.BuildRequestModelAsync(context.RequestAborted);
-        HttpRequestModel response = await requestHandlerService.HandleRequestAsync(request, context.RequestAborted);
+        PipelineBag request = await httpModelsFactory.BuildRequestModelAsync(context.RequestAborted);
+        PipelineBag response = await requestHandlerService.HandleRequestAsync(request, context.RequestAborted);
         await ApplyResponseAsync(context, response, context.RequestAborted);
     }
 
     private async Task ApplyResponseAsync(
         HttpContext context, 
-        HttpRequestModel response,
+        PipelineBag pipelineBag,
         CancellationToken cancellationToken = default
     )
     {
-        ApplyResponseCookies(context, response);
-        ApplyResponseHeaders(context, response);
+        ApplyResponseCookies(context, pipelineBag);
+        ApplyResponseHeaders(context, pipelineBag);
 
         // Set status and Content-Type
-        if (response.ResponseBody != null)
+        if (pipelineBag.Response.Body != null)
         {
             if (context.Response.Headers[HeaderNames.ContentType].IsNullOrEmpty())
-                context.Response.Headers[HeaderNames.ContentType] = response.ContentType ?? MediaTypeNames.Text.Plain;
+                context.Response.Headers[HeaderNames.ContentType] = pipelineBag.Response.ContentType ?? MediaTypeNames.Text.Plain;
 
-            response.Status ??= HttpStatusCode.OK;
+            pipelineBag.Response.Status ??= HttpStatusCode.OK;
         }
         else 
-            response.Status ??= HttpStatusCode.NoContent;
+            pipelineBag.Response.Status ??= HttpStatusCode.NoContent;
 
-        context.Response.StatusCode = (int)response.Status;
+        context.Response.StatusCode = (int)pipelineBag.Response.Status;
 
         // Write body if not null
-        if (response.ResponseBody != null)
-            await context.Response.WriteAsync(response.ResponseBody, cancellationToken: cancellationToken);
+        if (pipelineBag.Response.Body != null)
+            await context.Response.WriteAsync(pipelineBag.Response.Body, cancellationToken: cancellationToken);
     }
 
-    private void ApplyResponseHeaders(HttpContext context, HttpRequestModel response)
+    private void ApplyResponseHeaders(HttpContext context, PipelineBag response)
     {
-        if (response.ResponseHeaders == null)
+        if (response.Response.Headers == null)
             return;
 
         try
         {
             Dictionary<string, string>? headers =
-                JsonSerializer.Deserialize<Dictionary<string, string>>(response.ResponseHeaders);
+                JsonSerializer.Deserialize<Dictionary<string, string>>(response.Response.Headers);
 
             if (headers == null)
                 return;
@@ -96,16 +97,16 @@ public class DatabaseMiddleware
         }
     }
 
-    private void ApplyResponseCookies(HttpContext context, HttpRequestModel response)
+    private void ApplyResponseCookies(HttpContext context, PipelineBag response)
     {
-        if (string.IsNullOrEmpty(response.ResponseCookies))
+        if (string.IsNullOrEmpty(response.Response.Cookies))
             return;
 
         List<HttpCookieModel>? cookieModels;
 
         try
         {
-            cookieModels = JsonSerializer.Deserialize<List<HttpCookieModel>>(response.ResponseCookies);
+            cookieModels = JsonSerializer.Deserialize<List<HttpCookieModel>>(response.Response.Cookies);
         }
         catch (Exception exception)
         {
