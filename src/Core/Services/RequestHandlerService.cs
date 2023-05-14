@@ -98,7 +98,7 @@ public class RequestHandlerService : IRequestHandlerService
         if (handleErrors && request.Error?.RawException != null)
         {
             request.Status = HttpStatusCode.InternalServerError;
-            request.Body = JsonSerializer.Serialize(new
+            request.RequestBody = JsonSerializer.Serialize(new
             {
                 Message = "An unhandled error occurred",
             });
@@ -123,8 +123,8 @@ public class RequestHandlerService : IRequestHandlerService
         if (rawResponse == null) 
             return;
 
-        if (rawResponse.Body != null)
-            request.Body = rawResponse.Body;
+        if (rawResponse.ResponseBody != null)
+            request.ResponseBody = rawResponse.ResponseBody;
 
         if (rawResponse.RequestCookies != null)
             request.RequestCookies = rawResponse.RequestCookies;
@@ -162,20 +162,21 @@ public class RequestHandlerService : IRequestHandlerService
 
         if (request.QueryString != null)
         {
-            Dictionary<string, string> queryParams = UriQueryParamsParser.ParseQueryParams(request.QueryString);
-            foreach (KeyValuePair<string, string> queryParam in queryParams)
+            foreach (KeyValuePair<string, string> queryParam in request.QueryParams)
             {
                 sqlParams.TryAdd(queryParam.Key, queryParam.Value);
             }
         }
 
-        sqlParams.TryAdd(SystemQueryParametersConstants.Body, request.Body);
+        sqlParams.TryAdd(SystemQueryParametersConstants.RequestBody, request.RequestBody);
+        sqlParams.TryAdd(SystemQueryParametersConstants.ResponseBody, request.ResponseBody);
         sqlParams.TryAdd(SystemQueryParametersConstants.RequestCookies, request.RequestCookies ?? "{}");
         sqlParams.TryAdd(SystemQueryParametersConstants.ResponseCookies, request.ResponseCookies ?? "{}");
         sqlParams.TryAdd(SystemQueryParametersConstants.DataBag, request.DataBag ?? "{}");
         sqlParams.TryAdd(SystemQueryParametersConstants.RequestHeaders, request.RequestHeaders ?? "{}");
         sqlParams.TryAdd(SystemQueryParametersConstants.ResponseHeaders, request.ResponseHeaders ?? "{}");
         sqlParams.TryAdd(SystemQueryParametersConstants.PathParams, JsonSerializer.Serialize(request.PathParams));
+        sqlParams.TryAdd(SystemQueryParametersConstants.QueryParams, JsonSerializer.Serialize(request.QueryParams));
 
         if (procedure.Arguments.Any(arg => arg.Name == SystemQueryParametersConstants.Session))
         {

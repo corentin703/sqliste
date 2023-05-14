@@ -8,8 +8,11 @@ namespace Sqliste.Core.Models.Http;
 [DapperEntity]
 public class HttpRequestModel
 {
-    [DapperColumn(SystemQueryParametersConstants.Body)]
-    public string? Body { get; set; }
+    [DapperColumn(SystemQueryParametersConstants.RequestBody)]
+    public string? RequestBody { get; set; }
+    
+    [DapperColumn(SystemQueryParametersConstants.ResponseBody)]
+    public string? ResponseBody { get; set; }
 
     [DapperColumn(SystemQueryParametersConstants.RequestCookies)]
     public string? RequestCookies { get; set; }
@@ -36,6 +39,7 @@ public class HttpRequestModel
     public string? Session { get; set; }
 
     public Dictionary<string, string> PathParams { get; set; } = new();
+    public Dictionary<string, string> QueryParams { get; set; } = new();
     public HttpMethod Method { get; set; } = HttpMethod.Get;
     public string Path { get; set; } = string.Empty;
     public string? QueryString { get; set; }

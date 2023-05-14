@@ -4,6 +4,7 @@ using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Models.Http;
 using System.Text;
 using System.Text.Json;
+using Sqliste.Core.Utils.Uri;
 
 namespace Sqliste.Core.Services;
 
@@ -40,8 +41,9 @@ public class HttpModelsFactory : IHttpModelsFactory
         {
             Path = request.Path,
             QueryString = queryString,
+            QueryParams = queryString != null ? UriQueryParamsParser.ParseQueryParams(queryString) : new(),
             Method = httpMethod,
-            Body = bodyContent,
+            RequestBody = bodyContent,
             RequestCookies = JsonSerializer.Serialize(cookies),
             RequestHeaders = JsonSerializer.Serialize(headers),
         };

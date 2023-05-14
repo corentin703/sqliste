@@ -55,7 +55,7 @@ public class DatabaseMiddleware
         ApplyResponseHeaders(context, response);
 
         // Set status and Content-Type
-        if (response.Body != null)
+        if (response.ResponseBody != null)
         {
             if (context.Response.Headers[HeaderNames.ContentType].IsNullOrEmpty())
                 context.Response.Headers[HeaderNames.ContentType] = response.ContentType ?? MediaTypeNames.Text.Plain;
@@ -68,8 +68,8 @@ public class DatabaseMiddleware
         context.Response.StatusCode = (int)response.Status;
 
         // Write body if not null
-        if (response.Body != null)
-            await context.Response.WriteAsync(response.Body, cancellationToken: cancellationToken);
+        if (response.ResponseBody != null)
+            await context.Response.WriteAsync(response.ResponseBody, cancellationToken: cancellationToken);
     }
 
     private void ApplyResponseHeaders(HttpContext context, HttpRequestModel response)
