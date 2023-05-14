@@ -4,6 +4,7 @@ using DapperCodeFirstMappings;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Contracts.Services.Events;
+using Sqliste.Core.Extensions.Host;
 using Sqliste.Core.Extensions.ServiceCollection;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Database.SqlServer.Configuration;
@@ -26,6 +27,7 @@ public class Program
         DapperEntitiesMappingUtils.LoadMappingsFromAssembly(typeof(Program).Assembly);
 
         builder.Services.AddHttpContextAccessor();
+        builder.Services.AddSingleton<ILogger>(x => x.GetRequiredService<ILogger<Program>>());
 
         // Add services to the container.
         builder.Services.AddControllers();
@@ -83,20 +85,12 @@ public class Program
             {
                 app.Services
                     .GetRequiredService<ILogger<IQueue>>()
-                    .LogError("An error occurred during queued task : {exception}", exception.ToString()); 
+                    .LogError(exception: exception, "An error occurred during queued task"); 
             })
             .LogQueuedTaskProgress(app.Services.GetRequiredService<ILogger<IQueue>>());
 
-        await using(AsyncServiceScope scope = app.Services.CreateAsyncScope())
-        {
-            IDatabaseMigrationService databaseMigrationService = 
-                scope.ServiceProvider.GetRequiredService<IDatabaseMigrationService>();
-            // databaseMigrationService.Migrate();
-
-            ISqlisteIntrospectionService sqlisteIntrospectionService =
-                scope.ServiceProvider.GetRequiredService<ISqlisteIntrospectionService>();
-            await sqlisteIntrospectionService.IntrospectAsync();
-        }
+        await app.RunMigrationsAsync();
+        await app.RunInitialIntrospectionAsync();
 
         IDatabaseEventWatcher databaseEventWatcher = app.Services.GetRequiredService<IDatabaseEventWatcher>();
         databaseEventWatcher.Init();

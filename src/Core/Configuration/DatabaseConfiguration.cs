@@ -3,5 +3,5 @@
 public class DatabaseConfiguration
 {
     public string ConnectionString { get; set; } = string.Empty;
-    public string EntryPointSchemaName { get; set; } = "web";
+    public MigrationConfiguration Migration { get; set; } = new();
 }
