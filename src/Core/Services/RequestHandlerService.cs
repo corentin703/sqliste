@@ -126,7 +126,7 @@ public class RequestHandlerService : IRequestHandlerService
 
         PipelineResponseBag mergedResponse = new();
 
-        PropertyInfo[] properties = typeof(PipelineResponseBag).GetProperties(BindingFlags.Public);
+        PropertyInfo[] properties = typeof(PipelineResponseBag).GetProperties();
         foreach (PropertyInfo property in properties)
         {
             if (!property.CanRead || !property.CanWrite)

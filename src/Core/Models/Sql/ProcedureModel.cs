@@ -23,7 +23,7 @@ public class ProcedureModel
     public List<ProcedureArgumentModel> Arguments { get; set; } = new();
 
     public List<ISqlAnnotation> Annotations { get; set; } = new();
-    public List<string> RouteParamNames { get; set; } = new();
+    public List<HttpRouteParam> RouteParamNames { get; set; } = new();
 
     #region FromAnnotations
     public HttpOperationModel[] Operations { get; set; } = new [] 

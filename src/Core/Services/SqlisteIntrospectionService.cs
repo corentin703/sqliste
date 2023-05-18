@@ -130,7 +130,7 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
 
         _logger.LogDebug("Found {Pattern} for {ProcedureName}", routePattern, procedure.Name);
 
-        List<string> paramsNames = new();
+        List<HttpRouteParam> routeParams = new();
         foreach (Match paramMatch in Regex.Matches(routePattern, @"{(?<name>\w+\??)}"))
         {
             if (!paramMatch.Success)
@@ -158,14 +158,36 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
             else
                 procedureArgument.Location = ParameterLocation.Path;
 
-            paramsNames.Add(paramName);
-            routePattern = routePattern.Replace($"{{{paramName}}}", $@"(?<{paramName}>\w+)");
+            HttpRouteParam routeParam = new()
+            {
+                Name = paramName.Replace("?", ""),
+                IsRequired = !paramName.Contains("?"),
+            };
+            
+            routeParams.Add(routeParam);
+
+            // Avoid optional params inside route
+            if (!routeParam.IsRequired)
+            {
+                string paramTemplate = $"{{{paramName}}}";
+                int paramIndex = routePattern.IndexOf(paramTemplate, StringComparison.Ordinal);
+
+                routeParam.IsRequired = paramIndex != routePattern.Length - paramTemplate.Length;
+            }
+
+            if (routeParam.IsRequired)
+                routePattern = routePattern.Replace($"{{{paramName}}}", $@"(?<{routeParam.Name}>\w+)");
+            else
+            {
+                routePattern = routePattern.Replace($"{{{paramName}}}", "").TrimEnd('/');
+                routePattern = $@"{routePattern}/?(?<{routeParam.Name}>\w+)?";
+            }
         }
 
-        _logger.LogDebug("Found {ParamsCount} in {RoutePattern} for {ProcedureName}", paramsNames.Count, routePattern, procedure.Name);
+        _logger.LogDebug("Found {ParamsCount} in {RoutePattern} for {ProcedureName}", routeParams.Count, routePattern, procedure.Name);
 
         procedure.RoutePattern = @$"^{routePattern}$";
-        procedure.RouteParamNames = paramsNames;
+        procedure.RouteParamNames = routeParams;
     }
     private void SetupHttpMethod(ProcedureModel procedure)
     {

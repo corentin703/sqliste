@@ -25,7 +25,12 @@ public class ProcedureResolverService : IProcedureResolverService
     
     private bool IsMatchingRoute(string path, ProcedureModel procedure)
     {
-        return Regex.IsMatch(path, procedure.RoutePattern);
+        string routePattern = procedure.RoutePattern
+            .Replace("{?", "{")
+            .Replace("?}", "}")
+        ;
+        
+        return Regex.IsMatch(path, routePattern);
     }
 
     private bool IsMatchingVerb(HttpMethod method, ProcedureModel procedure)

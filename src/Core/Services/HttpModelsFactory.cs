@@ -120,13 +120,13 @@ public class HttpModelsFactory : IHttpModelsFactory
             return pathParams;
         }
 
-        procedure.RouteParamNames.ForEach(paramName =>
+        procedure.RouteParamNames.ForEach(routeParam =>
         {
-            string paramValue = paramsMatch.Groups[paramName].Value;
+            string paramValue = paramsMatch.Groups[routeParam.Name].Value;
             if (string.IsNullOrEmpty(paramValue))
                 return;
 
-            pathParams.Add(paramName, paramValue);
+            pathParams.Add(routeParam.Name, paramValue);
         });
 
         _logger.LogDebug("Found {ParamCount} path params for {ProcedureName} (path: {Path})", pathParams.Count, procedure.Name, uri);
