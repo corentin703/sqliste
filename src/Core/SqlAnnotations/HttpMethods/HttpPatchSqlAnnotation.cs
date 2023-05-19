@@ -2,6 +2,8 @@
 
 public class HttpPatchSqlAnnotation : HttpMethodBaseSqlAnnotation
 {
+    public override HttpMethod Method { get; } = HttpMethod.Patch;
+    
     public HttpPatchSqlAnnotation()
     {
         //

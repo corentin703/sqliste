@@ -2,6 +2,8 @@
 
 public class HttpGetSqlAnnotation : HttpMethodBaseSqlAnnotation
 {
+    public override HttpMethod Method { get; } = HttpMethod.Get;
+    
     public HttpGetSqlAnnotation()
     {
         //

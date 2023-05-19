@@ -5,6 +5,8 @@ namespace Sqliste.Core.SqlAnnotations.HttpMethods;
 public abstract class HttpMethodBaseSqlAnnotation : ISqlAnnotation
 {
     public string? Id { get; set; }
+    
+    public abstract HttpMethod Method { get; }
 
     protected HttpMethodBaseSqlAnnotation()
     {

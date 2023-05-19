@@ -2,6 +2,8 @@
 
 public class HttpPutSqlAnnotation : HttpMethodBaseSqlAnnotation
 {
+    public override HttpMethod Method { get; } = HttpMethod.Put;
+    
     public HttpPutSqlAnnotation()
     {
         //

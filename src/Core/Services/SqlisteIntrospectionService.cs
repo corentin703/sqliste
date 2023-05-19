@@ -31,33 +31,39 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
         _databaseGatewayService = databaseGatewayService;
     }
 
-    public virtual async Task<DatabaseIntrospectionModel> IntrospectAsync(CancellationToken cancellationToken = default)
+    public async Task<DatabaseIntrospectionModel> IntrospectAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Reading database introspection");
-        List<ProcedureModel>? procedures;
+        return await GetIntrospectionAsync(cancellationToken);
+    }
 
-        if (!_memoryCache.TryGetValue(IntrospectionCacheKey, out procedures) || procedures == null)
+    public void Clear()
+    {
+        _memoryCache.Remove(IntrospectionCacheKey);
+    }
+
+    private async Task<DatabaseIntrospectionModel> GetIntrospectionAsync(CancellationToken cancellationToken)
+    {
+        DatabaseIntrospectionModel? introspectionModel;
+
+        if (!_memoryCache.TryGetValue(IntrospectionCacheKey, out introspectionModel) || introspectionModel == null)
         {
-            _logger.LogInformation("Starting database introspection");
-            procedures = await _databaseGatewayService.QueryProceduresAsync(cancellationToken);
-            foreach (ProcedureModel procedure in procedures)
-            {
-                try
-                {
-                    await IntrospectProcedureAsync(procedure, cancellationToken);
-                }
-                catch (InvalidOperationException exception)
-                {
-                    _logger.LogWarning("Exception during introspection: {Exception}", exception.Message);
-                }
-            }
-
-            procedures = procedures.OrderByDescending(procedure => procedure.RoutePattern.Length).ToList();
-            _memoryCache.Set(IntrospectionCacheKey, procedures);
-            _logger.LogInformation("Database introspection ended");
+            introspectionModel = await RunIntrospectionAsync(cancellationToken);
+            
+            _logger.LogInformation("Caching database introspection");
+            _memoryCache.Set(IntrospectionCacheKey, introspectionModel);
         }
-        
-        _logger.LogDebug("Database introspection retrieved");
+        else
+            _logger.LogDebug("Database introspection retrieved");
+
+        return introspectionModel;
+    }
+
+    private async Task<DatabaseIntrospectionModel> RunIntrospectionAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Starting database introspection");
+
+        List<ProcedureModel> procedures = await RunProceduresIntrospectionAsync(cancellationToken);
 
         List<ProcedureModel> endpoints = procedures
             .Where(procedure =>
@@ -79,7 +85,6 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
             .Where(procedure =>
                 procedure.Annotations.Any(annotation => annotation is MiddlewareSqlAnnotation {After: false})
             )
-            //.Select(formatMiddleware)
             .OrderBy(sortMiddleware)
             .ToList();
 
@@ -87,10 +92,11 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
             .Where(procedure =>
                 procedure.Annotations.Any(annotation => annotation is MiddlewareSqlAnnotation {After: true})
             )
-            //.Select(formatMiddleware)
             .OrderBy(sortMiddleware)
             .ToList();
 
+        _logger.LogInformation("Database introspection ended");
+        
         return new DatabaseIntrospectionModel()
         {
             Endpoints = endpoints,
@@ -99,12 +105,31 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
         };
     }
 
-    public void Clear()
+    private async Task<List<ProcedureModel>> RunProceduresIntrospectionAsync(CancellationToken cancellationToken)
     {
-        _memoryCache.Remove(IntrospectionCacheKey);
+        _logger.LogInformation("Starting procedures introspection");
+
+        List<ProcedureModel> procedures = await _databaseGatewayService.QueryProceduresAsync(cancellationToken);
+        foreach (ProcedureModel procedure in procedures)
+        {
+            try
+            {
+                await RunProcedureIntrospectionAsync(procedure, cancellationToken);
+            }
+            catch (InvalidOperationException exception)
+            {
+                _logger.LogWarning(exception: exception, "Error during procedure introspection");
+            }
+        }
+
+        procedures = procedures.OrderByDescending(procedure => procedure.RoutePattern.Length).ToList();
+        _memoryCache.Set(IntrospectionCacheKey, procedures);
+        _logger.LogInformation("Database introspection ended");
+
+        return procedures;
     }
 
-    protected virtual async Task IntrospectProcedureAsync(
+    private async Task RunProcedureIntrospectionAsync(
         ProcedureModel procedure,
         CancellationToken cancellationToken = default
     )
@@ -166,15 +191,6 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
             
             routeParams.Add(routeParam);
 
-            // Avoid optional params inside route
-            if (!routeParam.IsRequired)
-            {
-                string paramTemplate = $"{{{paramName}}}";
-                int paramIndex = routePattern.IndexOf(paramTemplate, StringComparison.Ordinal);
-
-                routeParam.IsRequired = paramIndex != routePattern.Length - paramTemplate.Length;
-            }
-
             if (routeParam.IsRequired)
                 routePattern = routePattern.Replace($"{{{paramName}}}", $@"(?<{routeParam.Name}>\w+)");
             else
@@ -201,62 +217,29 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
 
         List<HttpOperationModel> httpOperations = new();
 
-        HttpMethodBaseSqlAnnotation? getMethod =
-            methodAnnotations.FirstOrDefault(annotation => annotation is HttpGetSqlAnnotation);
-        if (getMethod != null)
-        {
-            httpOperations.Add(new HttpOperationModel()
-            {
-                Id = getMethod.Id,
-                Method = HttpMethod.Get,
-            });
-        }
-
-        HttpMethodBaseSqlAnnotation? postMethod =
-            methodAnnotations.FirstOrDefault(annotation => annotation is HttpPostSqlAnnotation);
-        if (postMethod != null)
-        {
-            httpOperations.Add(new HttpOperationModel()
-            {
-                Id = postMethod.Id,
-                Method = HttpMethod.Post,
-            });
-        }
-
-        HttpMethodBaseSqlAnnotation? putMethod =
-            methodAnnotations.FirstOrDefault(annotation => annotation is HttpPutSqlAnnotation);
-        if (putMethod != null)
-        {
-            httpOperations.Add(new HttpOperationModel()
-            {
-                Id = putMethod.Id,
-                Method = HttpMethod.Put,
-            });
-        }
-
-        HttpMethodBaseSqlAnnotation? patchMethod =
-            methodAnnotations.FirstOrDefault(annotation => annotation is HttpPatchSqlAnnotation);
-        if (patchMethod != null)
-        {
-            httpOperations.Add(new HttpOperationModel()
-            {
-                Id = patchMethod.Id,
-                Method = HttpMethod.Patch,
-            });
-        }
-
-        HttpMethodBaseSqlAnnotation? deleteMethod =
-            methodAnnotations.FirstOrDefault(annotation => annotation is HttpDeleteSqlAnnotation);
-        if (deleteMethod != null)
-        {
-            httpOperations.Add(new HttpOperationModel()
-            {
-                Id = deleteMethod.Id,
-                Method = HttpMethod.Delete,
-            });
-        }
+        AddHttpMethod<HttpGetSqlAnnotation>(httpOperations, methodAnnotations);
+        AddHttpMethod<HttpPostSqlAnnotation>(httpOperations, methodAnnotations);
+        AddHttpMethod<HttpPutSqlAnnotation>(httpOperations, methodAnnotations);
+        AddHttpMethod<HttpPatchSqlAnnotation>(httpOperations, methodAnnotations);
+        AddHttpMethod<HttpDeleteSqlAnnotation>(httpOperations, methodAnnotations);
 
         procedure.Operations = httpOperations.ToArray();
+    }
+
+    private void AddHttpMethod<TAnnotation>(List<HttpOperationModel> httpOperations, List<HttpMethodBaseSqlAnnotation> methodAnnotations)
+        where TAnnotation : HttpMethodBaseSqlAnnotation
+    {
+        HttpMethodBaseSqlAnnotation? method = methodAnnotations
+            .FirstOrDefault(annotation => annotation is TAnnotation);
+        
+        if (method != null)
+        {
+            httpOperations.Add(new HttpOperationModel()
+            {
+                Id = method.Id,
+                Method = method.Method,
+            });
+        }
     }
 
     private void SetupContentType(ProcedureModel procedure)
@@ -270,7 +253,7 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
         procedure.ContentType = producesAnnotation.Mime;
     }
 
-    protected virtual (string, HttpOperationModel[]) GetDefaultRoutePattern(ProcedureModel procedure)
+    private (string, HttpOperationModel[]) GetDefaultRoutePattern(ProcedureModel procedure)
     {
         HttpMethod? httpMethod = null;
         Match procedureToRouteMatch = Regex.Match(procedure.Name, ProcedureToRoutePattern);

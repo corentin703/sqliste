@@ -2,6 +2,8 @@
 
 public class HttpDeleteSqlAnnotation : HttpMethodBaseSqlAnnotation
 {
+    public override HttpMethod Method { get; } = HttpMethod.Delete;
+
     public HttpDeleteSqlAnnotation()
     {
         //

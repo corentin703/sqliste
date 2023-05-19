@@ -11,5 +11,4 @@ public class ProcedureArgumentModel
     public ParameterLocation Location { get; set; } = ParameterLocation.Query;
     public ParameterDirection Direction { get; set; } = ParameterDirection.Input;
     public bool IsSystemParam { get; set; }
-    //public int Order { get; set; }
 }
