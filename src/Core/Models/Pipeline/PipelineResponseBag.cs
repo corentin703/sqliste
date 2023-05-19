@@ -32,10 +32,10 @@ public class PipelineResponseBag
 
     #endregion
 
-    #region DataBag
+    #region Storage
 
-    [DapperColumn(SystemQueryParametersConstants.RequestStorage)]
-    public string RequestStorage { get; set; } = "{}";
+    [DapperColumn(SystemQueryParametersConstants.PipelineStorage)]
+    public string PipelineStorage { get; set; } = "{}";
 
     [DapperColumn(SystemQueryParametersConstants.Session)]
     public string? Session { get; set; }

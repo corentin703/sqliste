@@ -175,7 +175,7 @@ public class RequestHandlerService : IRequestHandlerService
 
         sqlParams.TryAdd(SystemQueryParametersConstants.ResponseBody, pipeline.Response.Body);
         sqlParams.TryAdd(SystemQueryParametersConstants.ResponseCookies, pipeline.Response.Cookies ?? "{}");
-        sqlParams.TryAdd(SystemQueryParametersConstants.RequestStorage, pipeline.Response.RequestStorage);
+        sqlParams.TryAdd(SystemQueryParametersConstants.PipelineStorage, pipeline.Response.PipelineStorage);
         sqlParams.TryAdd(SystemQueryParametersConstants.ResponseHeaders, pipeline.Response.Headers ?? "{}");
         sqlParams.TryAdd(SystemQueryParametersConstants.ResponseStatus, pipeline.Response.Status);
         sqlParams.TryAdd(SystemQueryParametersConstants.ResponseContentType, pipeline.Response.ContentType ?? procedure.ContentType);

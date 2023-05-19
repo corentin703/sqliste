@@ -28,7 +28,7 @@ public static class SystemQueryParametersConstants
 
     #region Storage
 
-    public const string RequestStorage = "request_storage";
+    public const string PipelineStorage = "pipeline_storage";
     public const string Session = "session";
 
     #endregion
