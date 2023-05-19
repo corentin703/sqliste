@@ -83,10 +83,16 @@ public class SqlisteOpenApiService : ISqlisteOpenApiService
             OpenApiTypeGetResponseModel openApiTypeInfo = 
                 await _databaseOpenApiService.GetOpenApiTypeFromSqlTypeAsync(argument.SqlDataType, cancellationToken);
 
+            HttpUriParam? routeParam =
+                procedure.UriParams.FirstOrDefault(routeParam => routeParam.Name == argument.Name);
+            
+            if (routeParam == null)
+                continue;
+            
             parameters.Add(new OpenApiParameter()
             {
-                Name = argument.Name,
-                Required = procedure.RoutePattern.Contains(argument.Name),
+                Name = routeParam.Name,
+                Required = routeParam.IsRequired,
                 Schema = new OpenApiSchema()
                 {
                     Type = openApiTypeInfo.Type,

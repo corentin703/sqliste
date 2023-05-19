@@ -120,7 +120,7 @@ public class HttpModelsFactory : IHttpModelsFactory
             return pathParams;
         }
 
-        procedure.RouteParamNames.ForEach(routeParam =>
+        procedure.UriParams.ForEach(routeParam =>
         {
             string paramValue = paramsMatch.Groups[routeParam.Name].Value;
             if (string.IsNullOrEmpty(paramValue))

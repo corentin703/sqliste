@@ -137,8 +137,33 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
         procedure.Annotations = SqlAnnotationParser.ParseSqlString(procedure.Content);
         procedure.Arguments = await _databaseGatewayService.QueryProceduresParamsAsync(procedure.Name, cancellationToken);
         SetupRoutePattern(procedure);
+        SetupQueryParams(procedure);
         SetupHttpMethod(procedure);
         SetupContentType(procedure);
+    }
+
+    private void SetupQueryParams(ProcedureModel procedure)
+    {
+        foreach (ProcedureArgumentModel argument in procedure.Arguments)
+        {
+            if (argument.IsSystemParam)
+                continue;
+            
+            if (procedure.UriParams.Any(routeParam => routeParam.Name == argument.Name))
+                continue;
+            
+            HttpUriParam queryParam = new()
+            {
+                Name = argument.Name,
+                IsRequired = false,
+                Location = ParameterLocation.Query,
+            };
+            
+            procedure.UriParams.Add(queryParam);
+        }
+
+        int queryParamsCount = procedure.UriParams.Count(uriParam => uriParam.Location == ParameterLocation.Query);
+        _logger.LogDebug("Found {ParamsCount} for {ProcedureName}", queryParamsCount, procedure.Name);
     }
 
     private void SetupRoutePattern(ProcedureModel procedure)
@@ -146,16 +171,19 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
         RouteSqlAnnotation? routeAnnotation = procedure.Annotations
             .FirstOrDefault(annotation => annotation is RouteSqlAnnotation) as RouteSqlAnnotation;
 
+        string routePattern;
+        
         if (routeAnnotation == null)
-            (procedure.Route, procedure.Operations) = GetDefaultRoutePattern(procedure);
+            (routePattern, procedure.Operations) = GetDefaultRoutePattern(procedure);
         else
-            procedure.Route = routeAnnotation.Path;
+            routePattern = routeAnnotation.Path;
 
-        string routePattern = procedure.Route;
+        procedure.Route = ConvertRoutePatternToHttpRoute(routePattern);
 
         _logger.LogDebug("Found {Pattern} for {ProcedureName}", routePattern, procedure.Name);
 
-        List<HttpRouteParam> routeParams = new();
+        List<HttpUriParam> routeParams = new();
+
         foreach (Match paramMatch in Regex.Matches(routePattern, @"{(?<name>\w+\??)}"))
         {
             if (!paramMatch.Success)
@@ -171,7 +199,13 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
                 continue;
             }
 
-            ProcedureArgumentModel? procedureArgument = procedure.Arguments.FirstOrDefault(arg => arg.Name == paramName);
+            HttpUriParam routeParam = new()
+            {
+                Name = paramName.Replace("?", ""),
+                IsRequired = !paramName.Contains("?"),
+            };
+            
+            ProcedureArgumentModel? procedureArgument = procedure.Arguments.FirstOrDefault(arg => arg.Name == routeParam.Name);
             if (procedureArgument == null)
             {
                 _logger.LogWarning(
@@ -183,12 +217,6 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
             else
                 procedureArgument.Location = ParameterLocation.Path;
 
-            HttpRouteParam routeParam = new()
-            {
-                Name = paramName.Replace("?", ""),
-                IsRequired = !paramName.Contains("?"),
-            };
-            
             routeParams.Add(routeParam);
 
             if (routeParam.IsRequired)
@@ -203,8 +231,14 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
         _logger.LogDebug("Found {ParamsCount} in {RoutePattern} for {ProcedureName}", routeParams.Count, routePattern, procedure.Name);
 
         procedure.RoutePattern = @$"^{routePattern}$";
-        procedure.RouteParamNames = routeParams;
+        procedure.UriParams = routeParams;
     }
+
+    private string ConvertRoutePatternToHttpRoute(string routePattern)
+    {
+        return routePattern.Replace("?", "");
+    }
+    
     private void SetupHttpMethod(ProcedureModel procedure)
     {
         List<HttpMethodBaseSqlAnnotation> methodAnnotations = procedure.Annotations

@@ -49,7 +49,7 @@ public class DatabaseMiddleware
     private async Task ApplyResponseAsync(
         HttpContext context, 
         PipelineBag pipelineBag,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken
     )
     {
         ApplyResponseCookies(context, pipelineBag);
