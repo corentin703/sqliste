@@ -1,5 +1,6 @@
+using FluentAssertions;
 using Sqliste.Core.Contracts;
-using Sqliste.Core.SqlAnnotations;
+using Sqliste.Core.Models.SqlAnnotations;
 using Sqliste.Core.Utils.SqlAnnotations;
 
 namespace Core.UnitTests.Utils.SqlAnnotations;
@@ -15,9 +16,11 @@ public class SqlAnnotationsParserTests
     public void TestInstantiation(string input, int length)
     {
         List<ISqlAnnotation> annotations = SqlAnnotationParser.ParseSqlString(input);
-        Assert.NotNull(annotations);
-        Assert.Equal(length, annotations.Count);
-        Assert.IsType<RouteSqlAnnotation>(annotations[0]);
+
+        annotations.Should().NotBeNull();
+        annotations.Count.Should().Be(length);
+
+        annotations[0].Should().BeOfType<RouteSqlAnnotation>();
     }
 
     [Theory]
@@ -27,11 +30,9 @@ public class SqlAnnotationsParserTests
     {
         List<ISqlAnnotation> annotations = SqlAnnotationParser.ParseSqlString(input);
         RouteSqlAnnotation? routeAnnotation = annotations.FirstOrDefault() as RouteSqlAnnotation;
-        Assert.NotNull(routeAnnotation);
-        if (routeAnnotation == null)
-            return;
-
-        Assert.Equal(expectedPath, routeAnnotation.Path);
+        
+        routeAnnotation.Should().NotBeNull();
+        routeAnnotation?.Path.Should().Be(expectedPath);
     }
 
     [Theory]
@@ -43,10 +44,10 @@ public class SqlAnnotationsParserTests
     {
         List<ISqlAnnotation> annotations = SqlAnnotationParser.ParseSqlString(input);
         RouteSqlAnnotation? routeAnnotation = annotations.FirstOrDefault() as RouteSqlAnnotation;
-        Assert.NotNull(routeAnnotation);
-        if (routeAnnotation == null)
-            return;
-
-        Assert.Equal(expectedPath, routeAnnotation.Path);
+        
+        routeAnnotation.Should()
+            .NotBeNull();
+        
+        routeAnnotation?.Path.Should().Be(expectedPath);
     }
 }

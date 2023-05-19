@@ -2,7 +2,7 @@
 
 namespace Sqliste.Core.Utils.Uri;
 
-public static class UriParamsParser
+public static class UriRouteParamsParser
 {
     private const string TemplateParamPattern = @"{(?<name>\w+\??)}";
 

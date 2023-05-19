@@ -3,7 +3,7 @@ using Sqliste.Core.Utils.Uri;
 
 namespace Core.UnitTests.Utils.Url;
 
-public class UrlParamsParserTests
+public class UrlRouteParamsParserTests
 {
     [Fact]
     public void ExtractSingleParamsTest()
@@ -11,7 +11,7 @@ public class UrlParamsParserTests
         string uri = "/test/15";
         string template = "/test/{number}";
 
-        Dictionary<string, string> urlParams = UriParamsParser.ParseUrlParams(template, uri);
+        Dictionary<string, string> urlParams = UriRouteParamsParser.ParseUrlParams(template, uri);
         urlParams.Should()
             .NotBeNull()
             .And
@@ -28,7 +28,7 @@ public class UrlParamsParserTests
         string uri = "/test/15/superAction";
         string template = "/test/{number}/{action}";
 
-        Dictionary<string, string> urlParams = UriParamsParser.ParseUrlParams(template, uri);
+        Dictionary<string, string> urlParams = UriRouteParamsParser.ParseUrlParams(template, uri);
         urlParams.Should()
             .NotBeNull()
             .And
@@ -49,7 +49,7 @@ public class UrlParamsParserTests
         string uri = "/test/15";
         string template = "/test/{number}/{action?}";
 
-        Dictionary<string, string> urlParams = UriParamsParser.ParseUrlParams(template, uri);
+        Dictionary<string, string> urlParams = UriRouteParamsParser.ParseUrlParams(template, uri);
         urlParams.Should()
             .NotBeNull()
             .And
@@ -60,7 +60,7 @@ public class UrlParamsParserTests
         numberParam.Should().Be("15");
 
         uri = "/test/15/superAction";
-        urlParams = UriParamsParser.ParseUrlParams(template, uri);
+        urlParams = UriRouteParamsParser.ParseUrlParams(template, uri);
         urlParams.Should()
             .NotBeNull()
             .And

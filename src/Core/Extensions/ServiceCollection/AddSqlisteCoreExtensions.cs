@@ -11,7 +11,7 @@ public static class AddSqlisteCoreExtensions
 {
     public static IServiceCollection AddSqlisteCore(this IServiceCollection services)
     {
-        services.AddScoped<IHttpModelsFactory, HttpModelsFactory>();
+        services.AddScoped<IHttpModelsFactory, HttpModelsFactoryService>();
         services.AddScoped<IProcedureResolverService, ProcedureResolverService>();
         services.AddScoped<ISqlisteIntrospectionService, SqlisteIntrospectionService>();
         services.AddScoped<IRequestHandlerService, RequestHandlerService>();

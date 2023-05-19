@@ -10,13 +10,10 @@ public class DatabaseEventDispatcher : IDatabaseEventDispatcher
     private readonly ILogger<DatabaseEventDispatcher> _logger;
     private readonly IServiceProvider _serviceProvider;
 
-    private readonly Dictionary<string, Type> _handlersByEventName;
-
     public DatabaseEventDispatcher(ILogger<DatabaseEventDispatcher> logger, IServiceProvider serviceProvider)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
-        _handlersByEventName = EventHandlersUtils.HandlersByEventName;
     }
 
     public async Task DispatchEventsAsync(List<EventModel> events)
@@ -33,7 +30,7 @@ public class DatabaseEventDispatcher : IDatabaseEventDispatcher
     private async Task DispatchSystemEvent(EventModel model)
     {
         Type? handlerType;
-        if (!_handlersByEventName.TryGetValue(model.Name, out handlerType))
+        if (!EventHandlersUtils.HandlersByEventName.TryGetValue(model.Name, out handlerType))
         {
             _logger.LogWarning("Corresponding event handler type not found for SYS event name {eventName}", model.Name);
             return;

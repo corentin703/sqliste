@@ -1,4 +1,4 @@
-﻿namespace Sqliste.Core.SqlAnnotations.HttpMethods;
+﻿namespace Sqliste.Core.Models.SqlAnnotations.HttpMethods;
 
 public class HttpPostSqlAnnotation : HttpMethodBaseSqlAnnotation
 {

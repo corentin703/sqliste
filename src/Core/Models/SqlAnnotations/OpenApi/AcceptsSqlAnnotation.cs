@@ -1,7 +1,6 @@
-﻿using System.Net;
-using Sqliste.Core.Contracts;
+﻿using Sqliste.Core.Contracts;
 
-namespace Sqliste.Core.SqlAnnotations.OpenApi;
+namespace Sqliste.Core.Models.SqlAnnotations.OpenApi;
 
 public class AcceptsSqlAnnotation : ISqlAnnotation
 {

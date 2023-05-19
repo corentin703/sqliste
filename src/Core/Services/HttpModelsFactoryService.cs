@@ -1,23 +1,23 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Sqliste.Core.Contracts.Services;
-using Sqliste.Core.Models.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Sqliste.Core.Exceptions.Services.HttpModelFactoryService;
 using Sqliste.Core.Models.Pipeline;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.Utils.Uri;
 
 namespace Sqliste.Core.Services;
 
-public class HttpModelsFactory : IHttpModelsFactory
+public class HttpModelsFactoryService : IHttpModelsFactory
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ILogger<HttpModelsFactory> _logger;
+    private readonly ILogger<HttpModelsFactoryService> _logger;
     private readonly IProcedureResolverService _procedureResolver;
     
-    public HttpModelsFactory(IHttpContextAccessor httpContextAccessor, ILogger<HttpModelsFactory> logger, IProcedureResolverService procedureResolver)
+    public HttpModelsFactoryService(IHttpContextAccessor httpContextAccessor, ILogger<HttpModelsFactoryService> logger, IProcedureResolverService procedureResolver)
     {
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
@@ -105,7 +105,7 @@ public class HttpModelsFactory : IHttpModelsFactory
         catch(Exception exception) 
         {
             _logger.LogError(exception: exception, "Unable to parse body");
-            return null;
+            throw new RequestBodyParsingException();
         }
     }
     

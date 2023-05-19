@@ -1,6 +1,6 @@
 ﻿using Sqliste.Core.Contracts;
 
-namespace Sqliste.Core.SqlAnnotations.HttpMethods;
+namespace Sqliste.Core.Models.SqlAnnotations.HttpMethods;
 
 public abstract class HttpMethodBaseSqlAnnotation : ISqlAnnotation
 {

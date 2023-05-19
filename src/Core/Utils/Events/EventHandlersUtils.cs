@@ -13,8 +13,8 @@ public static class EventHandlersUtils
     {
         get
         {
-            //if (_handlersByEventName != null) 
-            //    return _handlersByEventName;
+            if (_handlersByEventName != null) 
+                return _handlersByEventName;
 
             _handlersByEventName = new Dictionary<string, Type>();
 

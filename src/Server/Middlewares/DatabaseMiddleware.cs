@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
+using Sqliste.Core.Exceptions.Services.HttpModelFactoryService;
 using Sqliste.Core.Models.Pipeline;
 using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
 
@@ -26,24 +27,31 @@ public class DatabaseMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        string? path = context.Request.Path.Value;
-        IEnumerable<string> routes = _actionDescriptorCollectionProvider
-            .ActionDescriptors
-            .Items
-            .Select(actionDescriptor => $"/{actionDescriptor.AttributeRouteInfo?.Template}");
+        try
+        {
+            string? path = context.Request.Path.Value;
+            IEnumerable<string> routes = _actionDescriptorCollectionProvider
+                .ActionDescriptors
+                .Items
+                .Select(actionDescriptor => $"/{actionDescriptor.AttributeRouteInfo?.Template}");
 
-        if (routes.Any(route => path?.Equals(route, StringComparison.InvariantCultureIgnoreCase) ?? false)) {
-            await _next(context);
-            return;
+            if (routes.Any(route => path?.Equals(route, StringComparison.InvariantCultureIgnoreCase) ?? false)) {
+                await _next(context);
+                return;
+            }
+
+            _logger.LogDebug("Handling request for path {Path}", context.Request.Path);
+            IRequestHandlerService requestHandlerService = context.RequestServices.GetRequiredService<IRequestHandlerService>();
+            IHttpModelsFactory httpModelsFactory = context.RequestServices.GetRequiredService<IHttpModelsFactory>();
+
+            PipelineBag request = await httpModelsFactory.BuildRequestModelAsync(context.RequestAborted);
+            PipelineBag response = await requestHandlerService.HandleRequestAsync(request, context.RequestAborted);
+            await ApplyResponseAsync(context, response, context.RequestAborted);
         }
-
-        _logger.LogDebug("Handling request for path {Path}", context.Request.Path);
-        IRequestHandlerService requestHandlerService = context.RequestServices.GetRequiredService<IRequestHandlerService>();
-        IHttpModelsFactory httpModelsFactory = context.RequestServices.GetRequiredService<IHttpModelsFactory>();
-
-        PipelineBag request = await httpModelsFactory.BuildRequestModelAsync(context.RequestAborted);
-        PipelineBag response = await requestHandlerService.HandleRequestAsync(request, context.RequestAborted);
-        await ApplyResponseAsync(context, response, context.RequestAborted);
+        catch (RequestBodyParsingException)
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.UnprocessableEntity;
+        }
     }
 
     private async Task ApplyResponseAsync(
