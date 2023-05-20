@@ -12,8 +12,7 @@ public static class SendFileExtensions
             string disposition = inline ? "inline" : "attachment";
             response.Headers[HeaderNames.ContentDisposition] = $"{disposition}; filename=\"{fileName}\";";
         }
-        
-        using MemoryStream contentStream = new MemoryStream(fileContent);
-        await contentStream.CopyToAsync(response.Body, cancellationToken);
+
+        await response.Body.WriteAsync(fileContent, cancellationToken);
     }
 }

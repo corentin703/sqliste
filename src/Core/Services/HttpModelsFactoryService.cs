@@ -92,12 +92,17 @@ public class HttpModelsFactoryService : IHttpModelsFactory
         };
     }
 
+    private bool IsFormDataRequest(HttpRequest request)
+    {
+        return request.ContentType.StartsWith(MimeTypes.FormUrlEncoded) || request.ContentType.StartsWith(MimeTypes.FormData);
+    }
+    
     private async Task<string?> ParseRequestBodyAsync(HttpRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Method == HttpMethods.Get || request.Method == HttpMethods.Delete)
             return null;
-
-        if (request.ContentType == MimeTypes.FormUrlEncoded || request.ContentType == MimeTypes.FormData)
+        
+        if (IsFormDataRequest(request))
             return null;
         
         if (request.ContentLength == 0)
@@ -108,6 +113,9 @@ public class HttpModelsFactoryService : IHttpModelsFactory
             byte[] buffer = new byte[Convert.ToInt32(request.ContentLength)];
             int readResult = await request.Body.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
 
+            if (readResult != request.ContentLength)
+                throw new RequestBodyReadingException();
+            
             return Encoding.UTF8.GetString(buffer);
         }
         catch(Exception exception) 
@@ -122,7 +130,7 @@ public class HttpModelsFactoryService : IHttpModelsFactory
         if (request.Method == HttpMethods.Get || request.Method == HttpMethods.Delete)
             return null;
 
-        if (request.ContentType != MimeTypes.FormUrlEncoded && request.ContentType != MimeTypes.FormData)
+        if (!IsFormDataRequest(request))
             return null;
         
         if (request.ContentLength == 0)
@@ -148,10 +156,22 @@ public class HttpModelsFactoryService : IHttpModelsFactory
         if (formContent.ContainsKey(file.Name))
             return;
 
-        await using MemoryStream contentStream = new();
-        await file.CopyToAsync(contentStream, cancellationToken);
+        try
+        {
+            byte[] fileContent = new byte[file.Length];
+            await using Stream fileStream = file.OpenReadStream();
+            int readResult = await fileStream.ReadAsync(fileContent, cancellationToken);
         
-        formContent.Add(file.Name, new FormDataFile(file, contentStream.ToArray()));
+            if (readResult != file.Length)
+                throw new RequestBodyReadingException();
+            
+            formContent.Add(file.Name, new FormDataFile(file, fileContent));
+        }
+        catch(Exception exception) 
+        {
+            _logger.LogError(exception: exception, "Unable to parse body");
+            throw new RequestBodyParsingException();
+        }
     } 
     
     private Dictionary<string, string> ParseUriParams(string uri, ProcedureModel procedure)
