@@ -1,0 +1,8 @@
+{
+  "label": "Démarrage",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Démarrez sereinement avec SQListe."
+  }
+}

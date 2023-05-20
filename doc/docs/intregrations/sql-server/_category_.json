@@ -1,0 +1,8 @@
+{
+  "label": "SQL Server",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Utilisez SQListe avec SQL Server ou Azure SQL edge."
+  }
+}
