@@ -29,9 +29,6 @@ public class HttpCookieModel
     [JsonPropertyName("httpOnly")]
     public bool? HttpOnly { get; set; }
 
-    [JsonPropertyName("isEssential")]
-    public bool? IsEssential { get; set; }
-
     [JsonPropertyName("maxAge")]
-    public TimeSpan? MaxAge { get; set; }
+    public int? MaxAge { get; set; }
 }

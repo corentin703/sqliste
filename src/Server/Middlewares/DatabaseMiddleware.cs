@@ -5,9 +5,10 @@ using Sqliste.Core.Models.Http;
 using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.FileProviders;
 using Sqliste.Core.Exceptions.Services.HttpModelFactoryService;
 using Sqliste.Core.Models.Pipeline;
+using Sqliste.Server.Extensions.HttpResponseExtensions;
 using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
 
 namespace Sqliste.Server.Middlewares;
@@ -66,8 +67,15 @@ public class DatabaseMiddleware
         // Set status and Content-Type
         if (pipelineBag.Response.Body != null)
         {
-            if (context.Response.Headers[HeaderNames.ContentType].IsNullOrEmpty())
+            if (string.IsNullOrEmpty(context.Response.Headers[HeaderNames.ContentType]))
                 context.Response.Headers[HeaderNames.ContentType] = pipelineBag.Response.ContentType ?? MediaTypeNames.Text.Plain;
+
+            pipelineBag.Response.Status ??= HttpStatusCode.OK;
+        }
+        else if (pipelineBag.Response.File != null)
+        {
+            if (string.IsNullOrEmpty(context.Response.Headers[HeaderNames.ContentType]))
+                context.Response.Headers[HeaderNames.ContentType] = pipelineBag.Response.ContentType ?? MediaTypeNames.Application.Octet;
 
             pipelineBag.Response.Status ??= HttpStatusCode.OK;
         }
@@ -78,7 +86,21 @@ public class DatabaseMiddleware
 
         // Write body if not null
         if (pipelineBag.Response.Body != null)
-            await context.Response.WriteAsync(pipelineBag.Response.Body, cancellationToken: cancellationToken);
+        {
+            await context.Response.WriteAsync(
+                text: pipelineBag.Response.Body, 
+                cancellationToken: cancellationToken
+            );
+        }
+        else if (pipelineBag.Response.File != null)
+        {
+            await context.Response.SendFileAsync(
+                fileContent: pipelineBag.Response.File ?? Array.Empty<byte>(),
+                fileName: pipelineBag.Response.FileName ?? "file.bin",
+                inline: pipelineBag.Response.FileInline,
+                cancellationToken: cancellationToken
+            );
+        }
     }
 
     private void ApplyResponseHeaders(HttpContext context, PipelineBag response)
@@ -134,9 +156,8 @@ public class DatabaseMiddleware
                 Secure = cookieModel.Secure ?? false,
                 SameSite = cookieModel.SameSite ?? SameSiteMode.Unspecified,
                 HttpOnly = cookieModel.HttpOnly ?? false,
-                IsEssential = cookieModel.IsEssential ?? false,
                 Expires = cookieModel.Expires,
-                MaxAge = cookieModel.MaxAge,
+                MaxAge = cookieModel.MaxAge != null ? TimeSpan.FromSeconds(cookieModel.MaxAge.Value) : null,
             });
         }
     }

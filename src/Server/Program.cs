@@ -1,7 +1,14 @@
+using System;
+using System.Threading.Tasks;
 using Coravel;
 using Coravel.Queuing.Interfaces;
 using DapperCodeFirstMappings;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Serilog;
+using Sqliste.Core.Configuration;
 using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Contracts.Services.Events;
 using Sqliste.Core.Extensions.Host;
@@ -43,6 +50,8 @@ public class Program
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<Microsoft.Extensions.Logging.ILogger>(x => x.GetRequiredService<ILogger<Program>>());
 
+            builder.Services.Configure<SessionConfiguration>(builder.Configuration.GetSection("Session"));
+            
             // Add services to the container.
             builder.Services.AddControllers();
             builder.Services.AddMemoryCache();
@@ -54,7 +63,9 @@ public class Program
             
             builder.Services.AddSession(options =>
             {
-                options.IdleTimeout = TimeSpan.FromSeconds(10);
+                SessionConfiguration sessionConfiguration = builder.Configuration.GetSection("Session").Get<SessionConfiguration>() ?? new();
+
+                options.IdleTimeout = TimeSpan.FromMinutes(sessionConfiguration.IdleTimeout);
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });

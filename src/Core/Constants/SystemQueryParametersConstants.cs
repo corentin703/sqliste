@@ -7,17 +7,23 @@ public static class SystemQueryParametersConstants
     public const string RequestModel = "request_model";
     public const string RequestContentType = "request_content_type";
     public const string RequestBody = "request_body";
+    public const string RequestFormData = "request_form_data";
     public const string RequestHeaders = "request_headers";
     public const string RequestCookies = "request_cookies";
     public const string RequestPath = "request_path";
     public const string QueryParams = "query_params";
     public const string PathParams = "path_params";
 
+    public const string RequestFormFilePrefix = "request_form_file_";
+
     #endregion
 
     #region Response
 
     public const string ResponseBody = "response_body";
+    public const string ResponseFile = "response_file";
+    public const string ResponseFileName = "response_file_name";
+    public const string ResponseFileInline = "response_file_inline";
     public const string ResponseContentType = "response_content_type";
     public const string ResponseCookies = "response_cookies";
     public const string ResponseHeaders = "response_headers";

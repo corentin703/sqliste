@@ -8,19 +8,28 @@ namespace Sqliste.Core.Models.Pipeline;
 [DapperEntity]
 public class PipelineResponseBag
 {
-    [DapperColumn("body")]
+    [DapperColumn(SystemQueryParametersConstants.ResponseBody)]
     public string? Body { get; set; }
+    
+    [DapperColumn(SystemQueryParametersConstants.ResponseFile)]
+    public byte[]? File { get; set; }
 
-    [DapperColumn("cookies")]
+    [DapperColumn(SystemQueryParametersConstants.ResponseFileName)]
+    public string? FileName { get; set; }
+
+    [DapperColumn(SystemQueryParametersConstants.ResponseFileInline)]
+    public bool FileInline { get; set; }
+
+    [DapperColumn(SystemQueryParametersConstants.ResponseCookies)]
     public string? Cookies { get; set; }
 
-    [DapperColumn("headers")]
+    [DapperColumn(SystemQueryParametersConstants.ResponseHeaders)]
     public string? Headers { get; set; }
 
-    [DapperColumn("status")]
+    [DapperColumn(SystemQueryParametersConstants.ResponseStatus)]
     public HttpStatusCode? Status { get; set; }
     
-    [DapperColumn("content_type")]
+    [DapperColumn(SystemQueryParametersConstants.ResponseContentType)]
     public string? ContentType { get; set; }
 
     #region Middlewares

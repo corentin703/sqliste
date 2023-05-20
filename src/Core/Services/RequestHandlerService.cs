@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using Sqliste.Core.Contracts.Services.Database;
+using Sqliste.Core.Models.Http.FormData;
 using Sqliste.Core.Models.Pipeline;
 
 namespace Sqliste.Core.Services;
@@ -168,6 +169,7 @@ public class RequestHandlerService : IRequestHandlerService
         sqlParams.TryAdd(SystemQueryParametersConstants.PathParams, JsonSerializer.Serialize(pipeline.Request.PathParams));
         sqlParams.TryAdd(SystemQueryParametersConstants.QueryParams, JsonSerializer.Serialize(pipeline.Request.QueryParams));
         sqlParams.TryAdd(SystemQueryParametersConstants.RequestModel, JsonSerializer.Serialize(pipeline.Request));
+        AddFormDataParameters(sqlParams, pipeline);
         
         #endregion
 
@@ -194,5 +196,22 @@ public class RequestHandlerService : IRequestHandlerService
 
         _logger.LogDebug("Added {ParamCount} for {ProcedureName}", sqlParams.Count, procedure.Name);
         return sqlParams;
+    }
+
+    private void AddFormDataParameters(Dictionary<string, object?> sqlParams, PipelineBag pipeline)
+    {
+        if (pipeline.Request.FormData == null) 
+            return;
+        
+        sqlParams.TryAdd(SystemQueryParametersConstants.RequestFormData, JsonSerializer.Serialize(pipeline.Request.FormData));
+
+        List<FormDataFile> files = pipeline.Request.FormData
+            .Select(item => item.Value)
+            .Where(value => value is FormDataFile).Cast<FormDataFile>().ToList();
+            
+        foreach (FormDataFile file in files)
+        {
+            sqlParams.TryAdd($"{SystemQueryParametersConstants.RequestFormFilePrefix}{file.Name}", file.Content);
+        }
     }
 }

@@ -4,7 +4,10 @@ using Sqliste.Core.Contracts.Services;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Primitives;
+using Sqliste.Core.Constants;
 using Sqliste.Core.Exceptions.Services.HttpModelFactoryService;
+using Sqliste.Core.Models.Http.FormData;
 using Sqliste.Core.Models.Pipeline;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.Utils.Uri;
@@ -30,7 +33,8 @@ public class HttpModelsFactoryService : IHttpModelsFactory
 
         HttpMethod httpMethod = GetHttpMethodFromString(request.Method);
         string? bodyContent = await ParseRequestBodyAsync(request, cancellationToken);
-
+        Dictionary<string, FormDataItem>? formData = await ParseRequestFormDataAsync(request, cancellationToken);
+        
         Dictionary<string, string> cookies =
             request.Cookies.ToDictionary(cookie => cookie.Key, cookie => cookie.Value);
 
@@ -61,6 +65,7 @@ public class HttpModelsFactoryService : IHttpModelsFactory
             PathParams = pathParams,
             Method = httpMethod,
             Body = bodyContent,
+            FormData = formData,
             Cookies = JsonSerializer.Serialize(cookies),
             Headers = JsonSerializer.Serialize(headers),
         };
@@ -92,6 +97,9 @@ public class HttpModelsFactoryService : IHttpModelsFactory
         if (request.Method == HttpMethods.Get || request.Method == HttpMethods.Delete)
             return null;
 
+        if (request.ContentType == MimeTypes.FormUrlEncoded || request.ContentType == MimeTypes.FormData)
+            return null;
+        
         if (request.ContentLength == 0)
             return null;
 
@@ -108,6 +116,43 @@ public class HttpModelsFactoryService : IHttpModelsFactory
             throw new RequestBodyParsingException();
         }
     }
+    
+    private async Task<Dictionary<string, FormDataItem>?> ParseRequestFormDataAsync(HttpRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.Method == HttpMethods.Get || request.Method == HttpMethods.Delete)
+            return null;
+
+        if (request.ContentType != MimeTypes.FormUrlEncoded && request.ContentType != MimeTypes.FormData)
+            return null;
+        
+        if (request.ContentLength == 0)
+            return null;
+
+        Dictionary<string, FormDataItem> formContent = new();
+
+        foreach (IFormFile file in request.Form.Files)
+        {
+            await ProcessFileAsync(formContent, file, cancellationToken);
+        }
+
+        foreach (KeyValuePair<string, StringValues> formItem in request.Form)
+        {
+            formContent.TryAdd(formItem.Key, new FormDataString(formItem.Key, formItem.Value));
+        }
+
+        return formContent;
+    }
+
+    private async Task ProcessFileAsync(Dictionary<string, FormDataItem> formContent, IFormFile file, CancellationToken cancellationToken)
+    {
+        if (formContent.ContainsKey(file.Name))
+            return;
+
+        await using MemoryStream contentStream = new();
+        await file.CopyToAsync(contentStream, cancellationToken);
+        
+        formContent.Add(file.Name, new FormDataFile(file, contentStream.ToArray()));
+    } 
     
     private Dictionary<string, string> ParseUriParams(string uri, ProcedureModel procedure)
     {

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Sqliste.Core.Models.Http.FormData;
 
 namespace Sqliste.Core.Models.Pipeline;
 
@@ -30,4 +31,6 @@ public class PipelineRequestBag
     
     [JsonPropertyName("queryString")]
     public string? QueryString { get; init; }
+
+    public Dictionary<string, FormDataItem>? FormData { get; init; }
 }
