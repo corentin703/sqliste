@@ -1,4 +1,3 @@
-
 using Microsoft.Net.Http.Headers;
 
 namespace Sqliste.Server.Extensions.HttpResponseExtensions;
