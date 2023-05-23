@@ -3,7 +3,7 @@ using Sqliste.Core.Models.Pipeline;
 
 namespace Sqliste.Core.Contracts.Services;
 
-public interface IRequestHandlerService
+public interface IRequestHandler
 {
     public Task<PipelineBag> HandleRequestAsync(PipelineBag pipeline, CancellationToken cancellationToken = default);
 }

@@ -17,9 +17,9 @@ public static class AddSqlServerExtensions
 
         services.AddSingleton<IDatabaseEventWatcher, SqlServerEventsWatcher>();
 
-        services.AddScoped<IDatabaseService, SqlServerDatabaseService>();
+        services.AddScoped<IDatabaseQueryService, SqlServerDatabaseQueryService>();
         services.AddScoped<IDatabaseMigrationService, SqlServerMigrationService>();
-        services.AddScoped<IDatabaseGatewayService, SqlServerGetawayService>();
+        services.AddScoped<IDatabaseGateway, SqlServerGetaway>();
         services.AddScoped<IDatabaseOpenApiService, SqlServerOpenApiService>();
 
         services.AddTransient<DatabaseAppEventCleaningInvocable>();

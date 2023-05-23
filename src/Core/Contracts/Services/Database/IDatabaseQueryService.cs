@@ -2,7 +2,7 @@
 
 namespace Sqliste.Core.Contracts.Services.Database;
 
-public interface IDatabaseService
+public interface IDatabaseQueryService
 {
     public Task<List<IDictionary<string, object>>?> QueryAsync(
         string query, 

@@ -42,11 +42,11 @@ public class DatabaseMiddleware
             }
 
             _logger.LogDebug("Handling request for path {Path}", context.Request.Path);
-            IRequestHandlerService requestHandlerService = context.RequestServices.GetRequiredService<IRequestHandlerService>();
-            IHttpModelsFactory httpModelsFactory = context.RequestServices.GetRequiredService<IHttpModelsFactory>();
+            IRequestHandler requestHandler = context.RequestServices.GetRequiredService<IRequestHandler>();
+            IPipelineModelsFactory pipelineModelsFactory = context.RequestServices.GetRequiredService<IPipelineModelsFactory>();
 
-            PipelineBag request = await httpModelsFactory.BuildRequestModelAsync(context.RequestAborted);
-            PipelineBag response = await requestHandlerService.HandleRequestAsync(request, context.RequestAborted);
+            PipelineBag request = await pipelineModelsFactory.BuildRequestModelAsync(context.RequestAborted);
+            PipelineBag response = await requestHandler.HandleRequestAsync(request, context.RequestAborted);
             await ApplyResponseAsync(context, response, context.RequestAborted);
         }
         catch (RequestBodyParsingException)

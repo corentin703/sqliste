@@ -11,13 +11,16 @@ public static class AddSqlisteCoreExtensions
 {
     public static IServiceCollection AddSqlisteCore(this IServiceCollection services)
     {
-        services.AddScoped<IHttpModelsFactory, HttpModelsFactoryService>();
-        services.AddScoped<IProcedureResolverService, ProcedureResolverService>();
+        services.AddScoped<IPipelineModelsFactory, PipelineModelsFactory>();
+        services.AddScoped<IProcedureResolver, ProcedureResolver>();
         services.AddScoped<ISqlisteIntrospectionService, SqlisteIntrospectionService>();
-        services.AddScoped<IRequestHandlerService, RequestHandlerService>();
-        services.AddScoped<ISqlisteOpenApiService, SqlisteOpenApiService>();
+        services.AddScoped<IRequestHandler, RequestHandler>();
+        services.AddScoped<ISqlisteOpenApiGenerator, SqlisteOpenApiGenerator>();
         services.AddTransient<IDatabaseEventDispatcher, DatabaseEventDispatcher>();
+        services.AddTransient<IDatabaseEventHandlerResolver, DatabaseEventHandlerResolver>();
         services.AddTransient<DatabaseEventInvocable>();
+
+        services.AddDatabaseEventHandlers();
 
         return services;
     }

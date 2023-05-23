@@ -2,13 +2,13 @@ using Sqliste.Core.Contracts.Services.Database;
 
 namespace Sqliste.Server.Session;
 
-public class DatabaseSessionAccessorService : IDatabaseSessionAccessorService
+public class DatabaseSessionAccessor : IDatabaseSessionAccessor
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ILogger<DatabaseSessionAccessorService> _logger;
+    private readonly ILogger<DatabaseSessionAccessor> _logger;
     private const string DatabaseSessionKey = "sql_session";
 
-    public DatabaseSessionAccessorService(IHttpContextAccessor httpContextAccessor, ILogger<DatabaseSessionAccessorService> logger)
+    public DatabaseSessionAccessor(IHttpContextAccessor httpContextAccessor, ILogger<DatabaseSessionAccessor> logger)
     {
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;

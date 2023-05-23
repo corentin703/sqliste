@@ -8,12 +8,12 @@ namespace Sqliste.Database.SqlServer.Jobs.Scheduling;
 
 public class DatabaseAppEventCleaningInvocable : IInvocable
 {
-    private readonly IDatabaseService _databaseService;
+    private readonly IDatabaseQueryService _databaseQueryService;
     private readonly ILogger<DatabaseAppEventCleaningInvocable> _logger;
 
-    public DatabaseAppEventCleaningInvocable(IDatabaseService databaseService, ILogger<DatabaseAppEventCleaningInvocable> logger)
+    public DatabaseAppEventCleaningInvocable(IDatabaseQueryService databaseQueryService, ILogger<DatabaseAppEventCleaningInvocable> logger)
     {
-        _databaseService = databaseService;
+        _databaseQueryService = databaseQueryService;
         _logger = logger;
     }
 
@@ -21,7 +21,7 @@ public class DatabaseAppEventCleaningInvocable : IInvocable
     {
         _logger.LogInformation("Running app event table's cleaning procedure");
         (string query, object args) = MaintenanceSqlQueries.GetAppEventTableCleaningProcedure();
-        await _databaseService.QueryAsync(query, args);
+        await _databaseQueryService.QueryAsync(query, args);
         _logger.LogInformation("App event table's cleaning procedure executed");
     }
 }

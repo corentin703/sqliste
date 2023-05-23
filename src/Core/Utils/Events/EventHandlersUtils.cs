@@ -1,40 +1,30 @@
-﻿using System.Net.NetworkInformation;
-using Sqliste.Core.Attributes.Events;
+﻿using Sqliste.Core.Attributes.Events;
 using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Sqliste.Core.Utils.Events;
 
-public static class EventHandlersUtils
+internal static class EventHandlersUtils
 {
-    private static Dictionary<string, Type>? _handlersByEventName;
-
-    public static Dictionary<string, Type> HandlersByEventName
+    public static Dictionary<string, Type> GetHandlersByEventName()
     {
-        get
+        Dictionary<string, Type> handlersByEventName = new();
+
+        foreach (Type type in typeof(EventHandlersUtils).Assembly.GetTypes())
         {
-            if (_handlersByEventName != null) 
-                return _handlersByEventName;
+            SystemEventHandlerAttribute? attribute = type.GetCustomAttribute<SystemEventHandlerAttribute>();
+            if (attribute == null)
+                continue;
 
-            _handlersByEventName = new Dictionary<string, Type>();
-
-            foreach (Type type in typeof(EventHandlersUtils).Assembly.GetTypes())
+            try
             {
-                SystemEventHandlerAttribute? attribute = type.GetCustomAttribute<SystemEventHandlerAttribute>();
-                if (attribute == null)
-                    continue;
-
-                try
-                {
-                    _handlersByEventName.Add(attribute.Name, type);
-                }
-                catch
-                {
-                    throw new InvalidOperationException($"{type.FullName ?? type.Name} is a duplicate : ignoring");
-                }
+                handlersByEventName.Add(attribute.Name, type);
             }
-
-            return _handlersByEventName;
+            catch
+            {
+                throw new InvalidOperationException($"{type.FullName ?? type.Name} is a duplicate : ignoring");
+            }
         }
+
+        return handlersByEventName;
     }
 }

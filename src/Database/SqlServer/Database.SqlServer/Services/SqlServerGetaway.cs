@@ -10,15 +10,15 @@ using Sqliste.Database.SqlServer.SqlQueries;
 
 namespace Sqliste.Database.SqlServer.Services;
 
-public class SqlServerGetawayService : IDatabaseGatewayService
+public class SqlServerGetaway : IDatabaseGateway
 {
-    private readonly ILogger<SqlServerGetawayService> _logger;
-    private readonly IDatabaseService _databaseService;
+    private readonly ILogger<SqlServerGetaway> _logger;
+    private readonly IDatabaseQueryService _databaseQueryService;
 
-    public SqlServerGetawayService(ILogger<SqlServerGetawayService> logger, IDatabaseService databaseService)
+    public SqlServerGetaway(ILogger<SqlServerGetaway> logger, IDatabaseQueryService databaseQueryService)
     {
         _logger = logger;
-        _databaseService = databaseService;
+        _databaseQueryService = databaseQueryService;
     }
 
     public async Task<PipelineResponseBag?> ExecProcedureAsync(PipelineRequestBag request, ProcedureModel procedure, Dictionary<string, object?> sqlParams,
@@ -31,7 +31,7 @@ public class SqlServerGetawayService : IDatabaseGatewayService
                 procedure.Name,
                 sqlParams.Count
             );
-            List<PipelineResponseBag>? result = await _databaseService.ExecAsync<PipelineResponseBag>(
+            List<PipelineResponseBag>? result = await _databaseQueryService.ExecAsync<PipelineResponseBag>(
                 $"{procedure.Schema}.{procedure.Name}",
                 procedure.Arguments,
                 sqlParams,
@@ -68,7 +68,7 @@ public class SqlServerGetawayService : IDatabaseGatewayService
     {
         _logger.LogDebug("Querying procedures");
         (string query, object args) = IntrospectionSqlQueries.GetProceduresQuery();
-        List<ProcedureModel>? procedures = await _databaseService.QueryAsync<ProcedureModel>(query, args, cancellationToken: cancellationToken);
+        List<ProcedureModel>? procedures = await _databaseQueryService.QueryAsync<ProcedureModel>(query, args, cancellationToken: cancellationToken);
 
         if (procedures == null || procedures.Count == 0)
         {
@@ -84,7 +84,7 @@ public class SqlServerGetawayService : IDatabaseGatewayService
     {
         _logger.LogDebug("Querying procedure params for {ProcedureName}", procedureName);
         (string query, object args) = IntrospectionSqlQueries.GetProceduresArgumentsQuery(procedureName);
-        List<SqlServerProcedureArgumentModel>? rawProcedureArgs = await _databaseService
+        List<SqlServerProcedureArgumentModel>? rawProcedureArgs = await _databaseQueryService
             .QueryAsync<SqlServerProcedureArgumentModel>(query, args, cancellationToken);
 
         List<ProcedureArgumentModel> procedureArgs = rawProcedureArgs?.Select(arg => 

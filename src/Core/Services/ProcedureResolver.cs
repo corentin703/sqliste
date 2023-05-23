@@ -4,11 +4,11 @@ using Sqliste.Core.Models.Sql;
 
 namespace Sqliste.Core.Services;
 
-public class ProcedureResolverService : IProcedureResolverService
+public class ProcedureResolver : IProcedureResolver
 {
     private readonly ISqlisteIntrospectionService _introspectionService;
 
-    public ProcedureResolverService(ISqlisteIntrospectionService introspectionService)
+    public ProcedureResolver(ISqlisteIntrospectionService introspectionService)
     {
         _introspectionService = introspectionService;
     }
@@ -18,7 +18,7 @@ public class ProcedureResolverService : IProcedureResolverService
         DatabaseIntrospectionModel introspection = await _introspectionService.IntrospectAsync(cancellationToken);
 
         ProcedureModel? procedure = introspection.Endpoints
-            .FirstOrDefault(route => IsMatchingRoute(path, route) && IsMatchingVerb(method, route));
+            .FirstOrDefault(procedure => IsMatchingRoute(path, procedure) && IsMatchingVerb(method, procedure));
 
         return procedure;
     }

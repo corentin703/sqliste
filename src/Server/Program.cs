@@ -17,7 +17,6 @@ using Sqliste.Core.Models.Sql;
 using Sqliste.Database.SqlServer.Configuration;
 using Sqliste.Database.SqlServer.Extensions.Host;
 using Sqliste.Database.SqlServer.Extensions.ServiceCollection;
-using Sqliste.Server.Extensions.ServiceCollection;
 using Sqliste.Server.Middlewares;
 using Sqliste.Server.Session;
 
@@ -75,10 +74,8 @@ public class Program
             builder.Services.AddSwaggerGen();
 
             builder.Services.AddSqlisteCore();
-            builder.Services.AddScoped<IDatabaseSessionAccessorService, DatabaseSessionAccessorService>();
+            builder.Services.AddScoped<IDatabaseSessionAccessor, DatabaseSessionAccessor>();
             builder.Services.AddSqlServer(builder.Configuration);
-
-            builder.Services.AddDatabaseEventHandlers();
 
             builder.Host.UseSerilog((context, services, configuration) =>
                 configuration

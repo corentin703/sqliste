@@ -8,12 +8,12 @@ namespace Sqliste.Server.Controllers;
 public class IntrospectionController : ControllerBase
 {
     private readonly ISqlisteIntrospectionService _sqlisteIntrospectionService;
-    private readonly ISqlisteOpenApiService _sqlisteOpenApiService;
+    private readonly ISqlisteOpenApiGenerator _sqlisteOpenApiGenerator;
 
-    public IntrospectionController(ISqlisteIntrospectionService sqlisteIntrospectionService, ISqlisteOpenApiService sqlisteOpenApiService)
+    public IntrospectionController(ISqlisteIntrospectionService sqlisteIntrospectionService, ISqlisteOpenApiGenerator sqlisteOpenApiGenerator)
     {
         _sqlisteIntrospectionService = sqlisteIntrospectionService;
-        _sqlisteOpenApiService = sqlisteOpenApiService;
+        _sqlisteOpenApiGenerator = sqlisteOpenApiGenerator;
     }
 
     // [HttpGet]
@@ -25,7 +25,7 @@ public class IntrospectionController : ControllerBase
     [HttpGet("swagger.json")]
     public async Task<IActionResult> GetOpenApiJson(CancellationToken cancellationToken)
     {
-        return Ok(await _sqlisteOpenApiService.GenerateOpenApiJsonAsync(cancellationToken));
+        return Ok(await _sqlisteOpenApiGenerator.GenerateOpenApiJsonAsync(cancellationToken));
     }
     
     // [HttpDelete]

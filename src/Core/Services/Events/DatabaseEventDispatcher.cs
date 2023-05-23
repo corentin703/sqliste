@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Sqliste.Core.Contracts.Services.Events;
+using Sqliste.Core.Exceptions.Services.Events.EventHandlerResolverService;
 using Sqliste.Core.Models.Events;
-using Sqliste.Core.Utils.Events;
 
 namespace Sqliste.Core.Services.Events;
 
@@ -9,11 +9,13 @@ public class DatabaseEventDispatcher : IDatabaseEventDispatcher
 {
     private readonly ILogger<DatabaseEventDispatcher> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IDatabaseEventHandlerResolver _databaseEventHandlerResolver;
 
-    public DatabaseEventDispatcher(ILogger<DatabaseEventDispatcher> logger, IServiceProvider serviceProvider)
+    public DatabaseEventDispatcher(ILogger<DatabaseEventDispatcher> logger, IServiceProvider serviceProvider, IDatabaseEventHandlerResolver databaseEventHandlerResolver)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _databaseEventHandlerResolver = databaseEventHandlerResolver;
     }
 
     public async Task DispatchEventsAsync(List<EventModel> events)
@@ -29,25 +31,31 @@ public class DatabaseEventDispatcher : IDatabaseEventDispatcher
 
     private async Task DispatchSystemEvent(EventModel model)
     {
-        Type? handlerType;
-        if (!EventHandlersUtils.HandlersByEventName.TryGetValue(model.Name, out handlerType))
+        try
         {
-            _logger.LogWarning("Corresponding event handler type not found for SYS event name {eventName}", model.Name);
-            return;
-        }
+            Type handlerType = _databaseEventHandlerResolver.GetHandlerByEventName(model.Name);
 
-        IDatabaseEventHandler? eventHandler = _serviceProvider.GetService(handlerType) as IDatabaseEventHandler;
-        if (eventHandler == null)
+            IDatabaseEventHandler? eventHandler = _serviceProvider.GetService(handlerType) as IDatabaseEventHandler;
+            if (eventHandler == null)
+            {
+                _logger.LogWarning(
+                    "Corresponding event handler type not registered in service provider for SYS event name {EventName} (event handler type name : {TypeName}",
+                    model.Name,
+                    handlerType.FullName ?? handlerType.Name
+                );
+                return;
+            }
+
+            await eventHandler.Handle(model);
+        }
+        catch (NoEventHandlerException noEventHandlerException)
         {
             _logger.LogWarning(
-                "Corresponding event handler type not registered in service provider for SYS event name {eventName} (event handler type name : {typeName}",
-                model.Name, 
-                handlerType.FullName ?? handlerType.Name
+                exception: noEventHandlerException, 
+                "Corresponding event handler type not found for SYS event name {EventName}",
+                model.Name
             );
-            return;
         }
-
-        await eventHandler.Handle(model);
     }
 
     private async Task DispatchCustomEvent(EventModel model)

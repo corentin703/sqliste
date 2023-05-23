@@ -11,21 +11,21 @@ using Sqliste.Core.Models.Pipeline;
 
 namespace Sqliste.Core.Services;
 
-public class RequestHandlerService : IRequestHandlerService
+public class RequestHandler : IRequestHandler
 {
     private readonly ISqlisteIntrospectionService _introspectionService;
-    private readonly ILogger<RequestHandlerService> _logger;
-    private readonly IDatabaseSessionAccessorService _sessionAccessorService;
-    private readonly IDatabaseGatewayService _databaseGatewayService;
+    private readonly ILogger<RequestHandler> _logger;
+    private readonly IDatabaseSessionAccessor _sessionAccessor;
+    private readonly IDatabaseGateway _databaseGateway;
     
-    public RequestHandlerService(
+    public RequestHandler(
         ISqlisteIntrospectionService introspectionService,
-        ILogger<RequestHandlerService> logger, IDatabaseSessionAccessorService sessionAccessorService, IDatabaseGatewayService databaseGatewayService)
+        ILogger<RequestHandler> logger, IDatabaseSessionAccessor sessionAccessor, IDatabaseGateway databaseGateway)
     {
         _introspectionService = introspectionService;
         _logger = logger;
-        _sessionAccessorService = sessionAccessorService;
-        _databaseGatewayService = databaseGatewayService;
+        _sessionAccessor = sessionAccessor;
+        _databaseGateway = databaseGateway;
     }
 
     public async Task<PipelineBag> HandleRequestAsync(PipelineBag pipeline, CancellationToken cancellationToken = default)
@@ -57,7 +57,7 @@ public class RequestHandlerService : IRequestHandlerService
         await ExecMiddlewaresAsync(pipeline, introspection.AfterMiddlewares, true, cancellationToken: cancellationToken);
 
         if (pipeline.Response.Session != null)
-            await _sessionAccessorService.SetSessionAsync(pipeline.Response.Session, cancellationToken);
+            await _sessionAccessor.SetSessionAsync(pipeline.Response.Session, cancellationToken);
         
         pipeline.Response.ContentType ??= procedure.ContentType;
         return pipeline;
@@ -86,7 +86,7 @@ public class RequestHandlerService : IRequestHandlerService
             }
 
             Dictionary<string, object?> sqlParams = await GetParamsAsync(pipeline, middleware, cancellationToken);
-            PipelineResponseBag? middlewareResponse = await _databaseGatewayService.ExecProcedureAsync(pipeline.Request, middleware, sqlParams, cancellationToken);
+            PipelineResponseBag? middlewareResponse = await _databaseGateway.ExecProcedureAsync(pipeline.Request, middleware, sqlParams, cancellationToken);
 
             if (middlewareResponse == null)
                 continue;
@@ -114,7 +114,7 @@ public class RequestHandlerService : IRequestHandlerService
     )
     {
         Dictionary<string, object?> sqlParams = await GetParamsAsync(pipeline, procedure, cancellationToken);
-        PipelineResponseBag? response = await _databaseGatewayService.ExecProcedureAsync(pipeline.Request, procedure, sqlParams, cancellationToken);
+        PipelineResponseBag? response = await _databaseGateway.ExecProcedureAsync(pipeline.Request, procedure, sqlParams, cancellationToken);
         pipeline.Response = MergeResponses(pipeline.Response, response);
 
         return pipeline;
@@ -187,7 +187,7 @@ public class RequestHandlerService : IRequestHandlerService
 
         if (procedure.Arguments.Any(arg => arg.Name == SystemQueryParametersConstants.Session))
         {
-            string? session = await _sessionAccessorService.GetSessionAsync(cancellationToken);
+            string? session = await _sessionAccessor.GetSessionAsync(cancellationToken);
             sqlParams.TryAdd(SystemQueryParametersConstants.Session, session);
         }
 

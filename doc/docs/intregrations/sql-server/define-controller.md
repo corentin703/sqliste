@@ -139,6 +139,6 @@ Lorsque l'on a plusieurs paramètres facultatifs, il vaut souvent mieux utiliser
 
 La taille d'un URI étant limitée à maximum 2048 caractères, des problèmes de lecture peuvent survenir en cas de paramètres trop longs.
 
-_Certains serveurs proposent d'augmenter cette limite, cependant il convient de vérifier que le client HTTP / navigateur prenne cette augmentation en charge._
+_Certains serveurs permettent d'augmenter cette limite, cependant il convient de vérifier que le client HTTP / navigateur prenne cette augmentation en charge._
 
 :::

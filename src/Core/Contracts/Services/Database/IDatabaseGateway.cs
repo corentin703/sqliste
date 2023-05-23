@@ -4,7 +4,7 @@ using Sqliste.Core.Models.Sql;
 
 namespace Sqliste.Core.Contracts.Services.Database;
 
-public interface IDatabaseGatewayService
+public interface IDatabaseGateway
 {
     public Task<PipelineResponseBag?> ExecProcedureAsync(
         PipelineRequestBag request,

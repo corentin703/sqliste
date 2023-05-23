@@ -8,12 +8,12 @@ using Sqliste.Database.SqlServer.Configuration;
 
 namespace Sqliste.Database.SqlServer.Services;
 
-public class SqlServerDatabaseService : IDatabaseService, IDisposable
+public class SqlServerDatabaseQueryService : IDatabaseQueryService, IDisposable
 {
     private readonly SqlConnection _sqlConnection;
-    private readonly ILogger<SqlServerDatabaseService> _logger;
+    private readonly ILogger<SqlServerDatabaseQueryService> _logger;
 
-    public SqlServerDatabaseService(IOptionsSnapshot<SqlServerConfiguration> configuration, ILogger<SqlServerDatabaseService> logger)
+    public SqlServerDatabaseQueryService(IOptionsSnapshot<SqlServerConfiguration> configuration, ILogger<SqlServerDatabaseQueryService> logger)
     {
         _logger = logger;
         _sqlConnection = new SqlConnection(configuration.Value.ConnectionString);

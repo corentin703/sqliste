@@ -12,16 +12,16 @@ using Sqliste.Core.Models.SqlAnnotations.OpenApi;
 
 namespace Sqliste.Core.Services;
 
-public class SqlisteOpenApiService : ISqlisteOpenApiService
+public class SqlisteOpenApiGenerator : ISqlisteOpenApiGenerator
 {
-    private readonly ILogger<SqlisteOpenApiService> _logger;
+    private readonly ILogger<SqlisteOpenApiGenerator> _logger;
     private readonly ISqlisteIntrospectionService _sqlisteIntrospectionService;
     private readonly IDatabaseOpenApiService _databaseOpenApiService;
 
     private const string ResourceRouteRegexPattern = @"^(\/api)?\/(?<resource>\w+).*$";
 
-    public SqlisteOpenApiService(
-        ILogger<SqlisteOpenApiService> logger, 
+    public SqlisteOpenApiGenerator(
+        ILogger<SqlisteOpenApiGenerator> logger, 
         ISqlisteIntrospectionService sqlisteIntrospectionService, IDatabaseOpenApiService databaseOpenApiService)
     {
         _logger = logger;

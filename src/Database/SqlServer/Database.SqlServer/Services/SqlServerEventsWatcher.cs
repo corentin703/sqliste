@@ -70,7 +70,7 @@ public class SqlServerEventsWatcher : IDisposable, IDatabaseEventWatcher
 
     private void SetupDependency()
     {
-        if (_sqlConnection == null)
+        if (_sqlConnection == null) 
             return;
 
         using SqlCommand sqlCommand = new(SelectEventsQuery, _sqlConnection);

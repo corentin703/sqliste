@@ -14,13 +14,13 @@ using Sqliste.Core.Utils.Uri;
 
 namespace Sqliste.Core.Services;
 
-public class HttpModelsFactoryService : IHttpModelsFactory
+public class PipelineModelsFactory : IPipelineModelsFactory
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ILogger<HttpModelsFactoryService> _logger;
-    private readonly IProcedureResolverService _procedureResolver;
+    private readonly ILogger<PipelineModelsFactory> _logger;
+    private readonly IProcedureResolver _procedureResolver;
     
-    public HttpModelsFactoryService(IHttpContextAccessor httpContextAccessor, ILogger<HttpModelsFactoryService> logger, IProcedureResolverService procedureResolver)
+    public PipelineModelsFactory(IHttpContextAccessor httpContextAccessor, ILogger<PipelineModelsFactory> logger, IProcedureResolver procedureResolver)
     {
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;

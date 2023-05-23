@@ -20,15 +20,15 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
 
     private readonly IMemoryCache _memoryCache;
     private readonly ILogger<SqlisteIntrospectionService> _logger;
-    private readonly IDatabaseGatewayService _databaseGatewayService;
+    private readonly IDatabaseGateway _databaseGateway;
 
     private const string IntrospectionCacheKey = "DatabaseIntrospection";
 
-    public SqlisteIntrospectionService(IMemoryCache memoryCache, ILogger<SqlisteIntrospectionService> logger, IDatabaseGatewayService databaseGatewayService)
+    public SqlisteIntrospectionService(IMemoryCache memoryCache, ILogger<SqlisteIntrospectionService> logger, IDatabaseGateway databaseGateway)
     {
         _memoryCache = memoryCache;
         _logger = logger;
-        _databaseGatewayService = databaseGatewayService;
+        _databaseGateway = databaseGateway;
     }
 
     public async Task<DatabaseIntrospectionModel> IntrospectAsync(CancellationToken cancellationToken = default)
@@ -109,7 +109,7 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
     {
         _logger.LogInformation("Starting procedures introspection");
 
-        List<ProcedureModel> procedures = await _databaseGatewayService.QueryProceduresAsync(cancellationToken);
+        List<ProcedureModel> procedures = await _databaseGateway.QueryProceduresAsync(cancellationToken);
         foreach (ProcedureModel procedure in procedures)
         {
             try
@@ -135,7 +135,7 @@ public class SqlisteIntrospectionService : ISqlisteIntrospectionService
     )
     {
         procedure.Annotations = SqlAnnotationParser.ParseSqlString(procedure.Content);
-        procedure.Arguments = await _databaseGatewayService.QueryProceduresParamsAsync(procedure.Name, cancellationToken);
+        procedure.Arguments = await _databaseGateway.QueryProceduresParamsAsync(procedure.Name, cancellationToken);
         SetupRoutePattern(procedure);
         SetupQueryParams(procedure);
         SetupHttpMethod(procedure);

@@ -9,12 +9,12 @@ namespace Sqliste.Database.SqlServer.Services;
 
 public class SqlServerOpenApiService : IDatabaseOpenApiService
 {
-    private readonly IDatabaseService _databaseService;
+    private readonly IDatabaseQueryService _databaseQueryService;
     private readonly ILogger<SqlServerOpenApiService> _logger;
 
-    public SqlServerOpenApiService(IDatabaseService databaseService, ILogger<SqlServerOpenApiService> logger)
+    public SqlServerOpenApiService(IDatabaseQueryService databaseQueryService, ILogger<SqlServerOpenApiService> logger)
     {
-        _databaseService = databaseService;
+        _databaseQueryService = databaseQueryService;
         _logger = logger;
     }
 
@@ -22,7 +22,7 @@ public class SqlServerOpenApiService : IDatabaseOpenApiService
     {
         (string query, object args) = IntrospectionSqlQueries.GetOpenApiDocumentQuery();
 
-        IDictionary<string, object>? result = (await _databaseService.QueryAsync(query, args, cancellationToken))
+        IDictionary<string, object>? result = (await _databaseQueryService.QueryAsync(query, args, cancellationToken))
             ?.FirstOrDefault();
 
 
@@ -61,7 +61,7 @@ public class SqlServerOpenApiService : IDatabaseOpenApiService
     public async Task<OpenApiTypeGetResponseModel> GetOpenApiTypeFromSqlTypeAsync(string sqlType, CancellationToken cancellationToken)
     {
         (string query, object args) = IntrospectionSqlQueries.GetOpenApiTypeFromSqlQuery(sqlType);
-        List<OpenApiTypeGetResponseModel>? result = await _databaseService.QueryAsync<OpenApiTypeGetResponseModel>(query, args, cancellationToken);
+        List<OpenApiTypeGetResponseModel>? result = await _databaseQueryService.QueryAsync<OpenApiTypeGetResponseModel>(query, args, cancellationToken);
 
         return result?.FirstOrDefault() ?? new OpenApiTypeGetResponseModel()
         {
