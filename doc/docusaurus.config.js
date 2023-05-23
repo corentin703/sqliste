@@ -11,10 +11,10 @@ const config = {
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
-  url: 'https://your-docusaurus-test-site.com',
+  url: 'https://corentin703.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment.md, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/sqliste/',
 
   // GitHub pages deployment.md config.
   // If you aren't using GitHub pages, you don't need these.
@@ -23,6 +23,7 @@ const config = {
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
+  trailingSlash: false,
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
@@ -50,7 +51,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/corentin703/sqliste/tree/doc/',
+            'https://github.com/corentin703/sqliste/tree/main/doc/',
         },
         // blog: {
         //   showReadingTime: true,
@@ -84,7 +85,7 @@ const config = {
             position: 'left',
             label: 'Documentation',
           },
-          {to: '/blog', label: 'Blog', position: 'left'},
+          // {to: '/blog', label: 'Blog', position: 'left'},
           {
             href: 'https://github.com/corentin703/sqliste',
             label: 'GitHub',
