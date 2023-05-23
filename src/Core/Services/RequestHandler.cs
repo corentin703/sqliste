@@ -51,7 +51,7 @@ public class RequestHandler : IRequestHandler
         if (!pipeline.Response.Next)
             return pipeline;
 
-        if (pipeline.Error == null)
+        if (pipeline.Response.Error == null)
             pipeline = await ExecRequestAsync(pipeline, procedure, cancellationToken) ?? pipeline;
         
         await ExecMiddlewaresAsync(pipeline, introspection.AfterMiddlewares, true, cancellationToken: cancellationToken);
@@ -76,7 +76,7 @@ public class RequestHandler : IRequestHandler
 
         foreach (ProcedureModel middleware in middlewaresToRun)
         {
-            if (pipeline.Error != null && handleErrors)
+            if (pipeline.Response.Error != null && handleErrors)
             {
                 bool isErrorHandler = middleware.Arguments.Exists(arg =>
                     arg.Name is SystemQueryParametersConstants.Error or SystemQueryParametersConstants.Error);
@@ -97,7 +97,7 @@ public class RequestHandler : IRequestHandler
                 break;
         }
 
-        if (handleErrors && pipeline.Error?.RawException != null)
+        if (handleErrors && pipeline.Response.Error?.RawException != null)
         {
             pipeline.Response.Status = HttpStatusCode.InternalServerError;
             pipeline.Response.Body = JsonSerializer.Serialize(new
@@ -141,6 +141,9 @@ public class RequestHandler : IRequestHandler
             else if (originalPropertyValue == null || !originalPropertyValue.Equals(updatedPropertyValue))
                 property.SetValue(mergedResponse, updatedPropertyValue);
         }
+
+        if (updatedResponse.Error == null)
+            mergedResponse.Error = null;
 
         return mergedResponse;
     }
@@ -191,8 +194,8 @@ public class RequestHandler : IRequestHandler
             sqlParams.TryAdd(SystemQueryParametersConstants.Session, session);
         }
 
-        if (pipeline.Error != null)
-            sqlParams.TryAdd(SystemQueryParametersConstants.Error, JsonSerializer.Serialize(pipeline.Error));
+        if (pipeline.Response.Error != null)
+            sqlParams.TryAdd(SystemQueryParametersConstants.Error, JsonSerializer.Serialize(pipeline.Response.Error));
 
         _logger.LogDebug("Added {ParamCount} for {ProcedureName}", sqlParams.Count, procedure.Name);
         return sqlParams;

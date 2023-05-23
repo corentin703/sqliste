@@ -5,6 +5,7 @@ using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Pipeline;
 using Sqliste.Core.Models.Sql;
+using Sqliste.Core.Utils;
 using Sqliste.Database.SqlServer.Models;
 using Sqliste.Database.SqlServer.SqlQueries;
 
@@ -93,7 +94,7 @@ public class SqlServerGetaway : IDatabaseGateway
                 Name = arg.Name,
                 SqlDataType = arg.SqlDataType,
                 Direction = arg.IsOutput ? ParameterDirection.InputOutput : ParameterDirection.Input,
-                IsSystemParam = arg.Name == "body" || arg.Name == "headers" || arg.Name == "cookies" || arg.Name == "data_bag",
+                IsSystemParam = SystemParamsUtils.GetAll().Contains(arg.Name), // arg.Name == "body" || arg.Name == "headers" || arg.Name == "cookies" || arg.Name == "data_bag",
             }
         ).ToList() ?? new List<ProcedureArgumentModel>();
 

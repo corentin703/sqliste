@@ -11,6 +11,4 @@ public class PipelineBag
     public PipelineResponseBag Response { get; set; } = new();
 
     public ProcedureModel? Procedure { get; init; }
-    
-    public SqlErrorModel? Error { get; set; }
 }
