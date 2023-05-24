@@ -2,50 +2,50 @@
 sidebar_position: 5
 ---
 
-# Stockage
+# Storage
 
-Afin de simplifier le développement, SQListe propose un accès à deux emplacements permettant de stocker des données pour une utilisation ultérieure.
+To simplify development, SQListe provides access to two storage locations for storing data for later use.
 
-Le format recommandé pour ces deux emplacements est le JSON. Ceux-ci sont initialisés avec un JSON vide ```{}``` et font partie intégrante de l'état de la réponse.
+The recommended format for these storage locations is JSON. They are initialized with an empty JSON object ```{}``` and are an integral part of the response state.
 
 :::note
 
-Le contenu de ces stockages est seulement initialisé par SQListe.<br/>
-Étant donné qu'ils ne font l'objet d'aucun traitement particulier, vous pouvez tout à fait définir un autre format en écrasant la valuer par défaut.
+The content of these storages is only initialized by SQListe.<br/>
+Since they are not subject to any specific processing, you can define a different format by overwriting the default value.
 
 :::
 
 :::info
 
-Le client n'a pas accès au contenu de ces emplacements de stockage : ils restent interne à SQListe.<br/>
-Vous pouvez donc y stocker des données sensibles sereinement.  
+The client does not have access to the content of these storage locations; they remain internal to SQListe.<br/>
+Therefore, you can safely store sensitive data in them.
 
 :::
 
 ## Session
 
-Le premier d'entre-eux donne accès à la session HTTP.<br/>
-La session est un emplacement de stockage généralement résolu à partir d'un jeton enregistré dans un cookie HTTP (ce qui est notre cas). 
-Sa durée de vie est de 20 minutes par défaut (configurable dans le fichier _appsettings.json_).
+The first storage location provides access to the HTTP session.<br/>
+The session is a storage location typically resolved from a token stored in an HTTP cookie (which is our case).
+Its lifespan is 20 minutes by default (configurable in the _appsettings.json_ file).
 
-Exemple d'utilisation :
+Example usage:
 
 ```sql
-#Route("/api/exemple/session")
-#HttpGet("ExempleSession")
-CREATE OR ALTER PROCEDURE [web].[p_exemple_session]
+#Route("/api/example/session")
+#HttpGet("ExampleSession")
+CREATE OR ALTER PROCEDURE [web].[p_example_session]
     @session NVARCHAR(MAX) 
 AS 
 BEGIN
-    IF (JSON_VALUE(@session, '$.calculSavant' IS NULL))
+    IF (JSON_VALUE(@session, '$.fancyCalculation' IS NULL))
     BEGIN
-        DECLARE @calcul_savant INT;
-        SET @calcul_savant = 1 + 1;
+        DECLARE @fancy_calculation INT;
+        SET @fancy_calculation = 1 + 1;
     
-        SET @session = JSON_MODIFY(@session, '$.calculSavant', @calcul_savant);
+        SET @session = JSON_MODIFY(@session, '$.fancyCalculation', @fancy_calculation);
     END
     
-    -- Autres traitements...
+    -- Other processing...
 
     SELECT 
          @session AS [session]
@@ -54,26 +54,25 @@ END
 GO
 ```
 
-Le calcul très savant et coûteux fait dans l'exemple ci-dessus ne sera exécuté que si le résultat n'est pas présent dans la session.
+The very fancy and expensive calculation in the example above will only be executed if the result is not present in the session.
 
 :::info
 
-La session HTTP n'est réellement altérée qu'à la fin du traitement du _pipeline_.
+The HTTP session is only modified at the end of the pipeline processing.
 
 :::
 
-:::note Initialisation
+:::note Initialization
 
-La session (et le cookie correspondant) ne sera initialisée que si elle est demandée par une procédure.
+The session (and the corresponding cookie) will only be initialized if it is requested by a procedure.
 
 :::
 
-## Stockage du _pipeline_
+## Pipeline Storage
 
-Afin de transmettre des informations au sein d'un _pipeline_, SQListe propose un stockage ayant une durée de vie d'une requête.
+To transmit information within a pipeline, SQListe provides a storage with a lifespan of one request.
 
-Exemple d'utilisation :
-
+Example usage:
 ```sql
 -- #Middleware(Order = 1, After = false)
 CREATE OR ALTER PROCEDURE [web].[p_middleware_log_request_start]
@@ -83,7 +82,7 @@ AS
 BEGIN 
     DECLARE @username NVARCHAR(50);
     
-    -- Lecture du jetton, vérification et récupération de l'utilisateur...
+    -- Read the token, verify and retrieve the user...
     
     SET @pipeline_storage = JSON_MODIFY(@pipeline_storage, '$.username', @username);
 
@@ -94,13 +93,13 @@ END
 GO
 ```
 
-Dans cet exemple, nous récupérons le nom de l'utilisateur et l'insérons dans le stockage du _pipeline_.<br/>
-Cela permet à un intergiciel ultérieur, ou à un contrôleur d'accéder à cette donnée sans réaliser de traitement supplémentaire.
+In this example, we retrieve the username and insert it into the pipeline storage.<br/>
+This allows a subsequent middleware or controller to access this data without performing additional processing.
 
-:::note Utilisation
+:::note Usage
 
-Ces deux stockages s'utilisent de la même manière, la seule différence étant la durée de vie.<br/>
-Par conséquent, la session sera plus appropriée pour stocker des données coûteuses à calculer / mise en cache, tandis que le stockage du _pipeline_ 
-sera plus destiné à l'enregistrement de données changeant souvent, et dont l'obtention est rapide.
+These two storages are used in the same way, with the only difference being their lifespan.<br/>
+Therefore, the session is more appropriate for storing data that is expensive to compute or cache, while the pipeline storage
+is more suitable for storing data that changes frequently and can be obtained quickly.
 
 :::

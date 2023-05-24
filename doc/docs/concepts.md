@@ -4,96 +4,89 @@ sidebar_position: 2
 
 # Concepts
 
-Dans SQListe, l'idée principale est de permettre à un développeur SQL de définir un 
-service web propulsé par le SGBD à travers des procédures stockées.
+In SQListe, the main idea is to allow a SQL developer to define a web service powered by the DBMS through stored procedures.
 
-## Entrée / sortie des procédures
+## Input/Output of Procedures
 
-Une procédure SQListe prend une liste de paramètres standard définie (tous facultatifs).
-Elle retourne ensuite ces paramètres, via un _SELECT_ avec le même nom.
+A SQListe procedure takes a defined list of standard parameters (all optional). It then returns these parameters using a _SELECT_ statement with the same name.
 
-Dans le cas d'un _pipeline_, les paramètres récupérés à la sortie d'une étape _x_ deviendront les paramètres de l'étape _x+1_.
-Si une procédure ne retourne pas un paramètre ayant été injecté, sa valeur restera inchangée lorsqu'il sera passé à la procédure suivante.
+In the case of a pipeline, the parameters retrieved at the output of step _x_ become the parameters of step _x+1_.
+If a procedure doesn't return a parameter that was injected, its value will remain unchanged when passed to the next procedure.
 
 :::note
 
-Ceci n'est valable que pour les paramètres standards.<br />
-Les paramètres personnalisés tels que ceux issus de la route ne sont pas concernés.
+This applies only to standard parameters.<br/>
+Custom parameters, such as those from the route, are not affected.
 
 :::
 
-## Pipeline de procédures
+## Procedure Pipeline
 
-Un _pipeline_ est un enchaînement d'étapes s'exécutant dans un ordre défini
-afin d'arriver à un état final.
+A pipeline is a sequence of steps that are executed in a defined order to reach a final state.
 
-Dans notre cas, cela va correspondre à l'exécution de procédures allant jouer le rôle d'intergiciels **avant**
-la procédure exécutant réellement l'objet de la requête, ainsi qu'après.
+In our case, this corresponds to the execution of procedures that act as middleware **before** and **after** 
+the procedure that actually performs the request's purpose.
 
-Cela se résume par le schéma suivant :
+It can be summarized by the following diagram:
 
 ```mermaid
 flowchart TD
-    request[Requête] --> before-middleware1
+    request[Request] --> before-middleware1
     
-    subgraph before-midleware[Pré-intergiciel]
-        before-middleware1[/Journalisation/] --> before-middleware2[/Authentification/]
+    subgraph before-midleware[Pre-Middleware]
+        before-middleware1[/Logging/] --> before-middleware2[/Authentication/]
     end
     
-    before-middleware2 --> controller[/Contrôleur/]
+    before-middleware2 --> controller[/Controller/]
     controller --> post-middleware1
 
-    subgraph after-midleware[Post-intergiciel]
-        post-middleware1[/Gestion d'erreurs/]
+    subgraph after-midleware[Post-Middleware]
+        post-middleware1[/Error Handling/]
     end
 
-    post-middleware1 --> response[Réponse]
+    post-middleware1 --> response[Response]
 ```
 
-Deux types de procédure ressortent de ce schéma : les contrôleurs et les intergiciels.
+Two types of procedures emerge from this diagram: controllers and middleware.
 
-## Contrôleurs
+## Controllers
 
-Dans notre cas, un contrôleur est un composant chargé d'orchestrer la logique métier nécessaire à transformer une requête HTTP en réponse HTTP.
+In our case, a controller is a component responsible for orchestrating the business logic required to transform an HTTP request into an HTTP response.
 
+## Middlewares
 
-## Intergiciels
+Middleware is a component that allows for the common logic to be shared among several more specific components.<br/>
+Within SQListe, middleware can be executed before (pre-middleware) or after (post-middleware) a controller.
 
-Un intergiciel est un composant permettant de mutualiser une logique commune à plusieurs autres composants plus spécifiques.<br/>
-Au sein de SQListe, ceux-ci peuvent être exécutés avant (pré-intergiciel) ou après (post-intergiciel) un contrôleur.
-
-Quelques exemples d'utilisation :
-- Vérifier que l'utilisateur est authentifié, qu'il a le droit d'accéder à certaines ressources, et renvoyer une erreur avec un statut 401 ou 403 selon le cas ;
-- Journaliser une requête ;
-- Attraper les erreurs non gérées, et formatter la réponse HTTP en conséquence.
-
+Some examples of middleware usage:
+- Verify if the user is authenticated, has the right to access certain resources, and return an error with a 401 or 403 status code accordingly.
+- Log a request.
+- Catch unhandled errors and format the HTTP response accordingly.
 
 ## Annotations
 
-Les annotations prennent la forme d'un mot clé précédé d'un _#_ mis en commentaires au-dessus d'une procédure, avec d'éventuels arguments.<br/>
-Elles servent à paramétrer le traitement que SQListe va appliquer à une procédure. 
+Annotations in SQListe are keywords preceded by a _#_ character, commented above a procedure, with optional arguments. They are used to configure the processing that SQListe will apply to a procedure.
 
-Exemple : 
+Example: 
 ```sql
--- L'écriture d'annotations n'empêche pas la présence de commentaires ;)
+-- Annotations can coexist with regular comments ;)
 -- #Route("/api/helloWorld")
 -- #HttpGet
 CREATE OR ALTER PROCEDURE [web].[p_proc]...
 ```
 
-Le passage d'arguments aux annotations peut se faire de deux manières :
-- de manière ordonnée : #Annotation("1", false, 3) où l'ordre des paramètres est important et où aucun d'entre eux ne peut être omis.
-- de manière nommée : #Annotation(Param2 = 2, Param1 = "1") où l'ordre des paramètres est libre, et où les paramètres ayant une valeur par défaut peuvent-être omis.
+Arguments can be passed to annotations in two ways:
+- Ordered : #Annotation("1", false, 3) where the order of the parameters is important and none of them can be omitted.
+- Named : #Annotation(Param2 = 2, Param1 = "1") where the order of the parameters is arbitrary, and parameters with default values can be omitted.
 
 :::info
 
-Le passage de paramètres en mode ordonné est recommandé si l'annotation ne prend pas beaucoup de paramètres.<br/>
-En revanche si elle en prend plus de deux, il vaut mieux passer les paramètres en mode nommé.
+Passing parameters in ordered mode is recommended when the annotation has only a few parameters. However, if it has more than two parameters, it is better to use named mode.
 
 :::
 
 :::tip
 
-Les annotations étant traitées séparément leur ordre n'a aucune importance.
+Annotations are processed independently, so their order doesn't matter.
 
 :::

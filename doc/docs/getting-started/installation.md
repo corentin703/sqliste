@@ -4,15 +4,13 @@ sidebar_position: 1
 
 # Installation
 
-SQListe est une application ASP.NET Core se connectant à votre base de données, 
-et exposant ses procédures stockées à travers une API web de type [REST](https://fr.wikipedia.org/wiki/Representational_state_transfer).
+SQListe is an ASP.NET Core application that connects to your database and exposes its stored procedures through a [REST](https://en.wikipedia.org/wiki/Representational_state_transfer) web API.
 
 ## Configuration
 
-La configuration se fait depuis le fichier _appsettings.json_, situé dans le même répertoire que l'exécutable.
-Celui-ci prend la forme suivante.
+The configuration is done through the _appsettings.json_ file, located in the same directory as the executable. It has the following structure:
 
-```json lines
+```json
 {
   "Serilog": {
     "MinimumLevel": {
@@ -29,7 +27,7 @@ Celui-ci prend la forme suivante.
     ],
     "Properties": {
       "ApplicationName": "SQListe"
-    }
+    },
     "WriteTo": [
       {
         "Name": "File",
@@ -45,33 +43,31 @@ Celui-ci prend la forme suivante.
     }
   },
   "Session": {
-    "IdleTimeout": 1440 // Session valable durant 24h
+    "IdleTimeout": 1440
   },
   "Database": {
-    "ConnectionString": "Data Source=MonServeurSQL; Database=MaBDD; User ID=MonUtilisateur; Password=MotDePasseSuperFort!; App=SQListe; TrustServerCertificate=true;",
+    "ConnectionString": "Data Source=MySQLServer; Database=MyDB; User ID=MyUser; Password=MyStrongPassword!; App=SQListe; TrustServerCertificate=true;",
     "Migration": {
       "Enable": true
     }
   }
 }
-```
 
-Nous y retrouvons 3 sections :
+There are 3 sections in the configuration file:
 
-### Journalisation
-SQListe repose sur [Serilog](https://serilog.net/).<br/>
-Cette partie du fichier de configuration permet de définir notamment le niveau de logs souhaité, 
-ainsi que l'emplacement des fichiers de logs si souhaité.
+### Logging
+SQListe uses [Serilog](https://serilog.net/) for logging.<br/>
+This section of the configuration file allows you to define the desired log level and the location of log files if desired.
 
-Pour en savoir plus sur la configuration de Serilog, vous pouvez consulter la [doc associée](https://github.com/serilog/serilog-settings-configuration).
+For more information on configuring Serilog, you can refer to the [associated documentation](https://github.com/serilog/serilog-settings-configuration).
 
-### Planificateur de tâches
-Cette section correspond aux paramètres du planificateur de tâche (SQListe utilise [Coravel](https://docs.coravel.net/)).<br/>
-Le paramètre _ConsummationDelay_ définit le délai de traitement lorsqu'une nouvelle tâche a été ajouté à la file d'attente. 
+### Task Scheduler
+This section corresponds to the parameters of the task scheduler (SQListe uses [Coravel](https://docs.coravel.net/)).<br/>
+The `ConsummationDelay` parameter defines the processing delay when a new task has been added to the queue.
 
 ### Session
-Donne un accès à certains paramètres de la session, notamment sa durée de vie (exprimée en minutes, 20 par défaut).
+Provides access to certain session parameters, including its idle timeout (expressed in minutes, default is 20).
 
-### Base de données
-Cette section peut varier selon le SGBD que vous utilisez (cf. la section correspondante).<br/>
-Cependant, nous retrouverons toujours le type de SGBD, la chaîne de connexion à celui-ci, ainsi que les paramètres de migration.
+### Database
+This section may vary depending on the DBMS you are using (refer to the corresponding section).<br/>
+However, it will always include the DBMS type, the connection string to it, and migration parameters.

@@ -1,0 +1,50 @@
+{
+  "version.label": {
+    "message": "Prochaîne",
+    "description": "The label for version current"
+  },
+  "sidebar.docSidebar.category.Getting started": {
+    "message": "Démarrage",
+    "description": "The label for category Getting started in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Getting started.link.generated-index.description": {
+    "message": "Démarrez sereinement avec SQListe.",
+    "description": "The generated-index page description for category Getting started in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Annotations": {
+    "message": "Annotations",
+    "description": "The label for category Annotations in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Integrations": {
+    "message": "Intégrations",
+    "description": "The label for category Integrations in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Integrations.link.generated-index.description": {
+    "message": "Vous pouvez utiliser SQListe avec les SGBDs. Vous retrouverez les instructions d'utilisation et d'intégration spécifiques pour chaque cas dans les rubriques suivantes.",
+    "description": "The generated-index page description for category Integrations in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.SQL Server": {
+    "message": "SQL Server",
+    "description": "The label for category SQL Server in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.SQL Server.link.generated-index.description": {
+    "message": "Utilisez SQListe avec SQL Server ou Azure SQL edge.",
+    "description": "The generated-index page description for category SQL Server in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.HTTP operations": {
+    "message": "Opérations sur HTTP",
+    "description": "The label for category HTTP operations in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.HTTP operations.link.generated-index.description": {
+    "message": "Effectuez des modifications sur la réponse HTTP.",
+    "description": "The generated-index page description for category HTTP operations in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Index": {
+    "message": "Index",
+    "description": "The label for category Index in sidebar docSidebar"
+  },
+  "sidebar.docSidebar.category.Index.link.generated-index.description": {
+    "message": "Vous retrouverez ici les listes exhaustives des constantes utilisées dans SQListe, ainsi que ce quelles contrôlent.",
+    "description": "The generated-index page description for category Index in sidebar docSidebar"
+  }
+}

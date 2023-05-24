@@ -2,74 +2,73 @@
 sidebar_position: 2
 ---
 
-# En-tête HTTP
+# HTTP Headers
 
-Les en-têtes HTTP permettent au client, comme au serveur, de joindre des informations supplémentaires à la requête ou à la réponse.<br/>
-La plupart de ces informations sont des paramètres, pouvant modifier le comportement du navigateur lorsque joints à une réponse HTTP. 
+HTTP headers allow both the client and the server to attach additional information to the request or the response.
+Most of this information consists of parameters that can modify the behavior of the browser when included in an HTTP response.
 
 :::note
 
-L'en-tête HTTP d'une requête sera relativement différente de celle d'une réponse, les paramètres exprimés ayant souvent un sens différent selon le cas.<br/>
-Certains d'entre eux n'ont de sens que dans une requête ou que dans une réponse.
+The HTTP header of a request will be significantly different from that of a response, as the expressed parameters often have a different meaning depending on the context.
+Some of them are only meaningful in a request or in a response.
 
 :::
 
-Pour en savoir plus sur les valeurs standards, et leur utilisation, vous pouvez consulter cette [ressource](https://developer.mozilla.org/fr/docs/Web/HTTP/Headers).
+To learn more about standard header values and their usage, you can refer to this resource.
 
 :::info
 
-Il est tout à fait possible de définir vos paramètres personnalisés, cependant gardez à l'esprit que l'en-tête HTTP est limitée en taille (maximum 8192 octets, tous paramètres confondus).
+It is possible to define custom parameters, but keep in mind that the HTTP header is limited in size (maximum of 8192 bytes, including all parameters).
 
 :::
 
-## Lecture
+## Reading
 
-La lecture d'une donnée dans l'en-tête est similaire à la lecture d'un cookie : nous disposons aussi d'un dictionnaire clé/valeur où la clé correspond au nom de l'information, et la valeur à la donnée.
+Reading a data from the header is similar to reading a cookie: we also have a key/value dictionary where the key corresponds to the name of the information, and the value is the data.
 
-Exemple : lecture d'un jeton d'authentification dans l'en-tête (paramètre _Authorization_)
+Example: reading an authentication token from the header (the _Authorization_ parameter)
 
 ```sql
-#Route("/api/exemple/headers/read")
-#HttpGet("ExempleLectureHeader")
-CREATE OR ALTER PROCEDURE [web].[p_exemple_cookie]
+#Route("/api/example/headers/read")
+#HttpGet("ExampleReadHeader")
+CREATE OR ALTER PROCEDURE [web].[p_example_header]
     @request_headers NVARCHAR(MAX) 
 AS 
 BEGIN
     DECLARE @auth_token NVARCHAR(MAX);
     DECLARE @username NVARCHAR(500);
     
-    -- Récupération du de la valeur contenu dans le paramètre "Authorization"
+    -- Retrieve the value from the "Authorization" parameter
     SET @auth_token = JSON_VALUE(@request_headers, '$.Authorization');
 
-    -- Vérification du jeton et récupération de l'utilisateur...
-
+    -- Verify the token and retrieve the user...
     SELECT 
-         '{ "message": "Bienvenu ' + @username  + ' !" }' AS [response_body]
+         '{ "message": "Welcome, ' + @username  + '!" }' AS [response_body]
         ,200 AS [response_status]
     ;
 END
 GO
 ```
 
-## Écriture
+## Writing
 
-À la différence des cookies, l'écriture d'une information dans l'en-tête se fait aussi via un dictionnaire clé/valeur répondant à la même logique que lors de la lecture.
+Unlike cookies, writing information to the header is also done using a key/value dictionary following the same logic as reading.
 
-Exemple : on définit le paramètre _Max-Age_ afin que notre ressource soit mise en cache dans le navigateur, et re-demandée uniquement lorsqu'elle sera expirée.
+Example: we set the _Max-Age_ parameter so that our resource is cached in the browser and only requested again when it expires.
 
 ```sql
-#Route("/api/exemple/headers/write")
-#HttpGet("ExempleLectureHeader")
-CREATE OR ALTER PROCEDURE [web].[p_exemple_cookie]
+#Route("/api/example/headers/write")
+#HttpGet("ExampleWriteHeader")
+CREATE OR ALTER PROCEDURE [web].[p_example_header]
     @request_headers NVARCHAR(MAX) 
 AS 
 BEGIN
     DECLARE @push_notification_token NVARCHAR(MAX);
     
-    -- Récupération du jeton permettant de recevoir des notifications push... 
+    -- Retrieve the token for receiving push notifications... 
     
-    -- On définit l'en-tête "Max-Age"
-    SET @request_headers = JSON_MODIFY(@request_headers, '$."Max-Age"', 21600); -- 60 * 24 * 15 = 21600 secondes = 15 jours
+    -- Set the "Max-Age" header
+    SET @request_headers = JSON_MODIFY(@request_headers, '$."Max-Age"', 21600); -- 60 * 24 * 15 = 21600 seconds = 15 days
     
     SELECT 
          '{ "token": "' + @push_notification_token + '" }' AS [response_body]

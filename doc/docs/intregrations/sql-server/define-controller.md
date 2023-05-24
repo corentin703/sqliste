@@ -2,11 +2,11 @@
 sidebar_position: 3
 ---
 
-# Définir un contrôleur
+# Set up a Controller
 
-Un contrôleur prend la forme d'une procédure stockée située dans le schéma _web_.
+A controller takes the form of a stored procedure located in the `web` schema.
 
-Voici un exemple de contrôleur basique :
+Here is an example of a basic controller:
 ```sql
 -- #Route("/api/helloWorld")
 -- #HttpGet("HelloWorld")
@@ -14,9 +14,9 @@ CREATE OR ALTER PROCEDURE [web].[p_hello_world]
 AS 
 BEGIN
     SELECT 
-         'Salutation tout le beau monde !' AS [response_body] -- On retourne le corp de la réponse
-        ,'text/plain' AS [response_content_type] -- Le type MIME du corp
-        ,200 AS [response_status] -- Le statut HTTP de la réponse
+         'Greetings, everyone!' AS [response_body] -- Returning the response body
+        ,'text/plain' AS [response_content_type] -- MIME type of the response body
+        ,200 AS [response_status] -- HTTP status of the response
     ;
 END
 GO
@@ -24,23 +24,23 @@ GO
 
 ## Paramètres d'URI
 
-Un paramètre d'URI est un argument fourni comme suit dans un URI : ```/api/exemple?name=Corentin```<br/>
-Pour en récupérer la valeur, il suffit de le prendre en argument de procédure :
+A URI parameter is an argument provided as follows in a URI: ```/api/exemple?name=Corentin```<br/>
+To retrieve its value, simply include it as an argument in the stored procedure:
 ```sql
--- On défini le paramètre 'name' dans la route entre accolades
+-- Define the 'name' parameter in the route using curly braces
 -- #Route("/api/helloWorld")
 -- #HttpGet("HelloWorld")
 CREATE OR ALTER PROCEDURE [web].[p_hello_world] 
-    @name NVARCHAR(100) = NULL -- On récupère le paramètre d'URI 'name'
+    @name NVARCHAR(100) = NULL -- Retrieve the 'name' URI parameter
 AS 
 BEGIN
     DECLARE @response_body NVARCHAR(MAX);
     
     IF (@name IS NULL)
-        SET @response_body = 'Salutation tout le beau monde !';
+        SET @response_body = 'Greetings, everyone!';
     ELSE    
-        SELECT @response_body = 'Salutation ' + @name + ' !';
-
+        SELECT @response_body = 'Greetings, ' + @name + '!';
+        
     SELECT 
          @response_body AS [response_body]
         ,'text/plain' AS [response_content_type]
@@ -50,34 +50,31 @@ END
 GO
 ```
 
-Un paramètre d'URI est toujours considéré comme étant facultatif, et doit être de type NVARCHAR (charge à la procédure de le caster si un autre type est attendu).
+A URI parameter is always considered optional and should be of type _NVARCHAR_ (you can cast it to another type within the stored procedure if needed).
 
 :::caution
 
-Il est recommandé de définir une valeur par défaut pour les paramètres d'URI, ainsi que pour les paramètres de route facultatifs dans les arguments de procédure :
-s'il n'y en a pas et que le paramètre n'est pas fourni, le SGBD ne pourra pas exécuter la procédure et remontera une erreur.
+It is recommended to provide a default value for URI parameters and optional route parameters in the stored procedure arguments. If no default value is provided and the parameter is not provided in the URI, the database will not be able to execute the procedure and will return an error.
 
 :::
 
-## Paramètres de route
+## Route Parameters
 
-Comme la plupart des _frameworks_ web, SQListe permet de définir des modèles de route.
-Cela permet de passer des arguments directement dans la route plutôt que dans les paramètres d'URI, ou encore dans le corp de la requête.
+Like most web frameworks, SQListe allows you to define route patterns. This allows you to pass arguments directly in the route instead of using URI parameters or request body.
 
-Exemple :
-
+Exemple:
 ```sql
--- On défini le paramètre 'name' dans la route entre accolades
+-- Define the 'name' parameter in the route using curly braces
 -- #Route("/api/helloWorld/{name}")
 -- #HttpGet("HelloWorld")
 CREATE OR ALTER PROCEDURE [web].[p_hello_world] 
-    @name NVARCHAR(100) -- On récupère le paramètre avec le même nom en argument de procédure
+    @name NVARCHAR(100) -- Retrieve the parameter with the same name as the stored procedure argument
 AS 
 BEGIN
     DECLARE @response_body NVARCHAR(MAX);
     
-    SELECT @response_body = 'Salutation ' + @name + ' !';
-
+    SELECT @response_body = 'Greetings, ' + @name + '!';
+        
     SELECT 
          @response_body AS [response_body]
         ,'text/plain' AS [response_content_type]
@@ -89,35 +86,35 @@ GO
 
 :::note
 
-Il est tout à fait possible de définir plusieurs paramètres dans la route, avec un nom différent.
+It is possible to define multiple parameters in the route with different names.
 
-Comme pour les paramètres d'URI, les paramètres de route seront injectés avec le type NVARCHAR.
+Like URI parameters, route parameters will be injected as NVARCHAR type.
 
 :::
 
 :::caution
 
-Si un nom de paramètre est identique à un nom de paramètre standard, ce dernier prendra le dessus. 
+If a parameter name matches a reserved keyword, the reserved keyword takes precedence.
 
 :::
 
-Dans notre exemple ci-dessus, le paramètre est considéré comme requis : s'il n'est pas fourni, SQListe ne fera pas la correspondance avec cette route.<br/>
-Pour définir un paramètre optionnel, nous pouvons faire comme suit :
+In the above example, the parameter is considered required: if it is not provided, SQListe will not match this route.
+To define an optional parameter, you can do the following:
 ```sql
--- On défini le paramètre 'name' dans la route entre accolades
+-- Define the 'name' parameter in the route using curly braces
 -- #Route("/api/helloWorld/{name?}")
 -- #HttpGet("HelloWorld")
 CREATE OR ALTER PROCEDURE [web].[p_hello_world] 
-    @name NVARCHAR(100) = NULL -- On récupère le paramètre avec le même nom en argument de procédure, en mettant une valeur NULL par défaut (utile si le paramètre n'est pas fourni).
+    @name NVARCHAR(100) = NULL -- Retrieve the parameter with the same name as the stored procedure argument, with a default value of NULL (useful if the parameter is not provided).
 AS 
 BEGIN
     DECLARE @response_body NVARCHAR(MAX);
     
     IF (@name IS NULL)
-        SET @response_body = 'Salutation tout le monde !';
+        SET @response_body = 'Greetings, everyone!';
     ELSE    
-        SELECT @response_body = 'Salutation ' + @name + ' !';
-
+        SELECT @response_body = 'Greetings, ' + @name + '!';
+        
     SELECT 
          @response_body AS [response_body]
         ,'text/plain' AS [response_content_type]
@@ -127,18 +124,16 @@ END
 GO
 ```
 
-Un paramètre facultatif **doit** figurer en fin de route.
-Exemple : 
-- ```/api/say/hello/{name?}/{age?}``` => Valide.
-- ```/api/say/hello/{name}/withAge/{age?}``` => Valide.
-- ```/api/say/hello/{name?}/withAge/{age?}``` => Invalide : le bon fonctionnement ne sera pas garanti.
+An optional parameter must be placed at the end of the route.
+For example:
+- ```/api/say/hello/{name?}/{age?}``` => Valid.
+- ```/api/say/hello/{name}/withAge/{age?}``` => Valid.
+- ```/api/say/hello/{name?}/withAge/{age?}``` => Invalid: correct functionality cannot be guaranteed.
 
-Lorsque l'on a plusieurs paramètres facultatifs, il vaut souvent mieux utiliser des paramètres d'URI, comme décrit précédemment.
+When dealing with multiple optional parameters, it is often better to use URI parameters as described earlier.
 
 :::warning Limitations
 
-La taille d'un URI étant limitée à maximum 2048 caractères, des problèmes de lecture peuvent survenir en cas de paramètres trop longs.
+The length of a URI is limited to a maximum of 2048 characters. Problems may occur when reading parameters that exceed this limit.
 
-_Certains serveurs permettent d'augmenter cette limite, cependant il convient de vérifier que le client HTTP / navigateur prenne cette augmentation en charge._
-
-:::
+_Some servers allow increasing this limit, but it is important to check whether the HTTP client/browser supports this increase._

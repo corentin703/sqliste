@@ -1,8 +1,8 @@
 {
-  "label": "Intégrations",
+  "label": "Integrations",
   "position": 5,
   "link": {
     "type": "generated-index",
-    "description": "Vous pouvez utiliser SQListe avec les SGBDs. Vous retrouverez les instructions d'utilisation et d'intégration spécifiques pour chaque cas dans les rubriques suivantes."
+    "description": "You can use SQListe with various database management systems (SGBDs). You will find specific instructions for usage and integration for each case in the following sections."
   }
 }

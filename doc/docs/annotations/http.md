@@ -1,33 +1,30 @@
 
 # HTTP
 
-Ces annotations servent à définir les routes, ainsi que les opérations qui leur sont associées.
+These annotations are used to define routes and their associated operations.
 
 ## #Route
 
-| Arguments               | Type            | Description                              | Optionnel | Valeur par défaut |
-|-------------------------|-----------------|------------------------------------------|-----------|-------------------|
-| Path                    | string          | URI à laquelle la procédure sera résolue | Non       |                   |
+| Arguments    | Type    | Description                           | Optional | Default Value |
+|--------------|---------|---------------------------------------|----------|---------------|
+| Path         | string  | The URI at which the procedure is resolved | No       |               |
 
-Exemples :
+Examples:
 ```
 #Route("/route")
 #Route(Path = "/route")
 ```
 
-## Opérations et verbes HTTP
 
-Ces annotations permettent de définir la méthode HTTP avec laquelle la procédure stockée sera résolue. 
+## Operations and HTTP Verbs
 
-| Arguments               | Type            | Description                               | Optionnel | Valeur par défaut |
-|-------------------------|-----------------|-------------------------------------------|-----------|-------------------|
-| Id                      | string          | Nom de l'opération (pour le JSON OpenAPI) | Oui       |                   |
+These annotations are used to define the HTTP method with which the stored procedure will be resolved.
 
 ### #HttpGet
 
-Associe le verbe HTTP GET.
+Associates the HTTP GET verb.
 
-Exemples :
+Examples:
 ```
 #HttpGet("GetBook")
 #HttpGet(Id = "GetBook")
@@ -35,9 +32,9 @@ Exemples :
 
 ### #HttpPost
 
-Associe le verbe HTTP POST.
+Associates the HTTP POST verb.
 
-Exemples :
+Examples:
 ```
 #HttpPost("CreateBook")
 #HttpPost(Id = "CreateBook")
@@ -45,9 +42,9 @@ Exemples :
 
 ### #HttpPut
 
-Associe le verbe HTTP PUT.
+Associates the HTTP PUT verb.
 
-Exemples :
+Examples:
 ```
 #HttpPost("UpdateBook")
 #HttpPost(Id = "UpdateBook")
@@ -55,9 +52,9 @@ Exemples :
 
 ### #HttpPatch
 
-Associe le verbe HTTP PATCH.
+Associates the HTTP PATCH verb.
 
-Exemples :
+Examples:
 ```
 #HttpPatch("UpdateBook")
 #HttpPatch(Id = "UpdateBook")
@@ -65,9 +62,9 @@ Exemples :
 
 ### #HttpDelete
 
-Associe le verbe HTTP DELETE.
+Associates the HTTP DELETE verb.
 
-Exemples :
+Examples:
 ```
 #HttpDelete("DeleteBook")
 #HttpDelete(Id = "DeleteBook")
@@ -75,12 +72,12 @@ Exemples :
 
 :::tip
 
-Il est possible de définir plusieurs verbes pour une même procédure.
+It is possible to define multiple verbs for the same procedure.
 
 :::
 
 :::caution
 
-Définir un nom d'opération est nécessaire pour que le JSON OpenAPI soit valide.
+Defining an operation name is necessary for the JSON OpenAPI to be valid.
 
 :::

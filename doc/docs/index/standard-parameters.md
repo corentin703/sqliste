@@ -1,68 +1,67 @@
-# Paramètres standards
+# Standard Parameters
 
-Voici la liste exhaustive des paramètres standards, leur direction (entrée / sortie), et à quoi ils servent.
+Here is the exhaustive list of standard parameters, their direction (input / output), and what they are used for.
 
 :::caution
 
-Les paramètres de sortie sont à retourner via un SELECT.<br/> 
-Les arguments de procédure en mode sortie (_OUTPUT_) ne sont pas pris en charge.
+Output parameters are returned via a SELECT statement.
+Procedure arguments in output mode (_OUTPUT_) are not supported.
 
 :::
 
-## À propos la requête
+## Request-related Parameters
 
-| Nom                    | Direction | Type .NET | Format                                                                                             | Type SQL-Server | Description                                                                                                                                                           |
+| Name                    | Direction | .NET Type | Format                                                                                             | SQL Server Type | Description                                                                                                                                                           |
 |------------------------|-----------|-----------|----------------------------------------------------------------------------------------------------|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| _request_content_type_ | Entrée    | string    | [Type MIME](https://developer.mozilla.org/fr/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) | VARCHAR(255)    | [Type MIME](https://developer.mozilla.org/fr/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) du corp de la requête, provenant de l'en-tête HTTP _Content-Type_. |
-| _request_body_         | Entrée    | string    | Brut                                                                                               | NVARCHAR(MAX)   | Corp de la requête.                                                                                                                                                   |
-| _request_headers_      | Entrée    | string    | JSON                                                                                               | NVARCHAR(MAX)   | En-têtes de la requête, dictionnaire clé-valeur.                                                                                                                      |
-| _request_cookies_      | Entrée    | string    | JSON                                                                                               | NVARCHAR(MAX)   | Cookie joint à la requête, dictionnaire clé-valeur.                                                                                                                   |
-| _request_path_         | Entrée    | string    | Brut                                                                                               | NVARCHAR(MAX)   | Route de la requête.                                                                                                                                                  |
-| _query_params_         | Entrée    | string    | JSON                                                                                               | NVARCHAR(MAX)   | Paramètres de requête (présent après le _?_ dans l'URI), dictionnaire clé-valeur.                                                                                     |
-| _path_params_          | Entrée    | string    | JSON                                                                                               | NVARCHAR(MAX)   | Paramètres résolus depuis la route, dictionnaire clé-valeur.                                                                                                          |
-| _request_model_        | Entrée    | string    | JSON                                                                                               | NVARCHAR(MAX)   | Modèle _brut_ géré par SQListe, contenant toutes les informations de la requête.                                                                                      |
-| _error_                | Entrée    | string    | JSON                                                                                               | NVARCHAR(MAX)   | .Modèle contenant des informations à propos de la dernière erreur survenue. Pour en savoir plus, cf. TODO.                                                            |
-| _response_model_       | Entrée    | string    | JSON                                                                                               | NVARCHAR(MAX)   | Modèle _brut_ géré par SQListe, contenant toutes les informations de la réponse en l'état actuel.                                                                     |
+| _request_content_type_ | Input     | string    | [MIME Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) | VARCHAR(255)    | The MIME type of the request body, extracted from the HTTP _Content-Type_ header.                                                                                   |
+| _request_body_         | Input     | string    | Raw                                                                                               | NVARCHAR(MAX)   | The request body.                                                                                                                                                     |
+| _request_headers_      | Input     | string    | JSON                                                                                               | NVARCHAR(MAX)   | The request headers, as a key-value dictionary.                                                                                                                      |
+| _request_cookies_      | Input     | string    | JSON                                                                                               | NVARCHAR(MAX)   | The cookies attached to the request, as a key-value dictionary.                                                                                                       |
+| _request_path_         | Input     | string    | Raw                                                                                               | NVARCHAR(MAX)   | The request path.                                                                                                                                                     |
+| _query_params_         | Input     | string    | JSON                                                                                               | NVARCHAR(MAX)   | The query parameters (present after the '?' in the URI), as a key-value dictionary.                                                                                  |
+| _path_params_          | Input     | string    | JSON                                                                                               | NVARCHAR(MAX)   | The parameters resolved from the route, as a key-value dictionary.                                                                                                    |
+| _request_model_        | Input     | string    | JSON                                                                                               | NVARCHAR(MAX)   | The raw model managed by SQListe, containing all the information about the request.                                                                                  |
+| _error_                | Input     | string    | JSON                                                                                               | NVARCHAR(MAX)   | A model containing information about the last error that occurred. For more information, refer to TODO.                                                              |
+| _response_model_       | Input     | string    | JSON                                                                                               | NVARCHAR(MAX)   | The raw model managed by SQListe, containing all the information about the response in its current state.                                                           |
 
-## À propos la réponse
+## Response-related Parameters
 
-Ces paramètres peuvent-être retourné depuis une procédure via un SELECT, et viendront altérer l'état de la réponse.
+These parameters can be returned from a procedure via a SELECT statement and will modify the state of the response.
 
-| Nom                     | Direction       | Type .NET | Format                                                                                             | Type SQL-Server | Description                                                                                                                                                                                 |
+| Name                     | Direction       | .NET Type | Format                                                                                             | SQL Server Type | Description                                                                                                                                                                                 |
 |-------------------------|-----------------|-----------|----------------------------------------------------------------------------------------------------|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| _response_content_type_ | Entrée / Sortie | string    | [Type MIME](https://developer.mozilla.org/fr/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) | VARCHAR(255)    | [Type MIME](https://developer.mozilla.org/fr/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) du corp de la réponse, qui sera assignée à l'en-tête HTTP _Content-Type_ si non définie. |
-| _response_body_         | Entrée / Sortie | string    | Brut                                                                                               | NVARCHAR(MAX)   | Corp de la réponse.                                                                                                                                                                         |
-| _response_headers_      | Entrée / Sortie | string    | JSON                                                                                               | NVARCHAR(MAX)   | En-têtes de la réponse, dictionnaire clé-valeur.                                                                                                                                            |
-| _response_cookies_      | Entrée / Sortie | string    | JSON                                                                                               | NVARCHAR(MAX)   | Cookie joint à la réponse. Pour en savoir plus sur le format : cf. section... TODO                                                                                                          |
-| _response_status_       | Entrée / Sortie | int       | [Statut HTTP](https://developer.mozilla.org/fr/docs/Web/HTTP/Status)                               | INT             | Code de statut de la réponse.                                                                                                                                                               |
+| _response_content_type_ | Input / Output | string    | [MIME Type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) | VARCHAR(255)    | The MIME type of the response body, which will be assigned to the _Content-Type_ HTTP header if not defined.                                                                               |
+| _response_body_         | Input / Output | string    | Raw                                                                                               | NVARCHAR(MAX)   | The response body.                                                                                                                                                                         |
+| _response_headers_      | Input / Output | string    | JSON                                                                                               | NVARCHAR(MAX)   | The response headers, as a key-value dictionary.                                                                                                                                            |
+| _response_cookies_      | Input / Output | string    | JSON                                                                                               | NVARCHAR(MAX)   | The cookie attached to the response. For more information on the format, refer to the... TODO section.                                                                                                          |
+| _response_status_       | Input / Output | int       | [HTTP Status](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)                             | INT             | The response status code.                                                                                                                                                                  |
 
 :::tip
 
-Ces paramètres peuvent aussi être pris en argument de procédure. <br/>
-Cela permet de récupérer l'état actuel de la réponse, ce qui peut être utile après un traitement par intergiciel.
+These parameters can also be passed as procedure arguments.
+This allows retrieving the current state of the response, which can be useful after processing by middleware.
 
 :::
 
-## À propos du stockage
+## Storage-related Parameters
 
-Ces paramètres peuvent-être pris en arguments de procédure, ainsi que retourné pour altérer l'état.
+These parameters can be passed as procedure arguments and returned to modify the state.
 
-| Nom               | Direction       | Type .NET | Format  | Type SQL-Server | Description                                                                                                          |
+| Name               | Direction       | .NET Type | Format  | SQL Server Type | Description                                                                                                          |
 |-------------------|-----------------|-----------|---------|-----------------|----------------------------------------------------------------------------------------------------------------------|
-| _request_storage_ | Entrée / Sortie | string    | _JSON*_ | NVARCHAR(MAX)   | Stockage ayant une durée de vie d'une requête. Il est initialisé à un objet JSON vide au début d'une requête ('{}'). |
-| _session_         | Entrée / Sortie | string    | _JSON*_ | NVARCHAR(MAX)   | Accès à la session HTTP. Pour en savoir plus : TODO.                                                                 |
+| _request_storage_ | Input / Output | string    | _JSON*_ | NVARCHAR(MAX)   | Storage with a lifespan of a request. It is initialized with an empty JSON object at the beginning of a request ('{}'). |
+| _session_         | Input / Output | string    | _JSON*_ | NVARCHAR(MAX)   | Access to the HTTP session. For more information, refer to... TODO section.                                                                                              |
 
 :::info
 
-_JSON*_ : Bien que le contenu soit initialisé avec un JSON vide ('{}') par défaut, il peut néanmoins être changé de 
-manière sûre étant donné que ce contenu ne fait pas l'objet d'un traitement de la part de SQListe.
+_JSON*_ : Although the content is initially initialized with an empty JSON ('{}') by default, it can be safely changed as this content is not processed by SQListe.
 
 :::
 
-## Paramètres spécifiques aux intergiciels
+## Middleware-specific Parameters
 
-Ces paramètres peuvent-être pris en arguments de procédure, ainsi que retourné pour altérer l'état.
+These parameters can be passed as procedure arguments and returned to modify the state.
 
-| Nom    | Direction | Type .NET | Format | Type SQL-Server | Description                                                                   |
+| Name    | Direction | .NET Type | Format | SQL Server Type | Description                                                                   |
 |--------|-----------|-----------|--------|-----------------|-------------------------------------------------------------------------------|
-| _next_ | Sortie    | bool      |        | BIT             | Si retourné à 0, interromp la _pipeline_ de requête. Est égal à 1 par défaut. |
+| _next_ | Output    | bool      |        | BIT             | If returned as 0, it interrupts the request pipeline. It defaults to 1. |

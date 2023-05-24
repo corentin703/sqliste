@@ -2,21 +2,20 @@
 sidebar_position: 1
 ---
 
-# Prérequis
+# Prerequisites
 
 ## Version
 
-SQListe requiert SQL Server 2017 minimum.<br/>
-Azure SQL edge est supporté.<br/>
-Le connecteur SQL serveur est testé avec SQL Server 2017 Express.
+SQListe requires a minimum of SQL Server 2017.<br/>
+Azure SQL Edge is supported.<br/>
+The SQL Server connector is tested with SQL Server 2017 Express.ess.
 
-## Base de données
+## Database
 
-Vous devez activer le _service broker_ sur la base de données destinée à être utilisée avec SQListe pour pouvoir 
-utiliser les fonctionnalités événementielles de l'applicatif.
+You need to enable the _service broker_ on the database intended to be used with SQListe in order to use the event-driven features of the application.
 
-## Support du JSON
+## JSON Support
 
-Beaucoup de paramètres utilisent le format JSON au sein de SQListe.<br/>
-SQL Server dispose d'un jeu de fonctions relativement complet pour lire et écrire des données au format JSON.<br/>
-[Pour en savoir plus](https://learn.microsoft.com/fr-fr/sql/relational-databases/json/json-data-sql-server?view=sql-server-ver16).
+Many parameters within SQListe use the JSON format.<br/>
+SQL Server provides a relatively comprehensive set of functions for reading and writing data in JSON format.<br/>
+[Learn more](https://learn.microsoft.com/en-us/sql/relational-databases/json/json-data-sql-server?view=sql-server-ver16).

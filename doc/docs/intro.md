@@ -4,19 +4,17 @@ sidebar_position: 1
 
 # Introduction
 
-SQListe est un framework à destination des développeurs SQL souhaitant réaliser un 
-service web piloté par une base de données.
+SQListe is a framework designed for SQL developers who want to build a web service powered by a database.
 
-- Multiplateforme
-- Contrôle complet sur la réponse HTTP
-- Support d'OpenAPI
+- Cross-platform
+- Full control over the HTTP response
+- OpenAPI support
 
-## Évolutions futures 
+## Future Developments
 
-- Prise en charge des flux
-- Connecteur Oracle
-- Connecteur Postgres
-- Internationalisation de la doc
-- Connecteur MariaDB
-- Prise en charge de plugins, exposant des fonctionnalités appelables depuis la base de données 
-  - Plugin ajoutant des fonctionnalités temps-réel
+- Support for forms
+- Oracle connector
+- Postgres connector
+- MariaDB connector
+- Plugin support, exposing functionalities callable from the database
+  - Plugin adding real-time capabilities

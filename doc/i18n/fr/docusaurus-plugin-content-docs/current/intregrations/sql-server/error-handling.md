@@ -2,16 +2,16 @@
 sidebar_position: 7
 ---
 
-# Error Handling
+# Gestion d'erreurs
 
-When an error occurs in a procedure during the pipeline, it interrupts the pipeline and returns a 500 (_INTERNAL SERVER ERROR_) error.
+Lorsqu'une erreur se produit dans une procédure au cours du _pipeline_, cela l'interrompt et retourne une erreur 500 (_INTERNAL SERVER ERROR_).
 
-To enable error handling, you can take the _error_ standard parameter in the procedures of the pipeline.
-When an error occurs, SQListe will look at the list of arguments in the procedures of the pipeline that have not been executed yet. If such an argument exists, it will take the first one and execute it.<br/>
+Afin de vous permettre d'implémenter une gestion d'erreurs, il est possible de prendre un paramètre standard _error_ dans les procédures du _pipeline_.<br/>
+Ceci fait, lorsque qu'une erreur va survenir, SQListe va consulter la liste des arguments dans les procédures du _pipeline_ n'ayant pas été exécutés, et si existant, prendra la première d'entre-elles et exécutera.<br/>
 
-If this procedure doesn't raise an error itself, it will be considered as handled.
+Si cette procédure ne remonte pas d'erreur à son tour, celle-ci sera considérée comme étant gérée.
 
-The _error_ argument is a JSON object following the format below:
+L'argument _error_ est un JSON répondant au format suivant :
 ```json lines
 {
   "message": "Message de l'erreur", // Cela peut contenir une chaine tout à fait arbitraire *
@@ -21,22 +21,22 @@ The _error_ argument is a JSON object following the format below:
 }
 ```
 
-This mechanism allows you to intercept an error and modify the response accordingly.
+Ce mécanisme va vous permettre d'intercepter une erreur, et de modifier la réponse en conséquence.
 
 :::info
 
-When multiple procedures in the pipeline raise errors, the mechanism is executed each time.
+Lorsque plusieurs procédures du _pipeline_ remontent des erreurs, le mécanisme s'exécute à chaque fois.
 
 :::
 
-:::note About the _message_ field of the _error_ argument *
+:::note À propos du champ _message_ de l'argument _error_ *
 
-It is possible to pass a structured string (such as JSON) as a message in a RAISERROR statement.
-You can retrieve it here and process the response accordingly.
+Il y a possibilité de faire passer une chaine structurée (par exemple un JSON) en tant que message dans un _RAISERROR_. 
+Vous le retrouverez ici, et pourrez réaliser un traitement sur la réponse avec. 
 
 :::
 
-Practical example: a post-middleware catching all errors:
+Cas pratique : un post-intergiciel attrapant toutes les erreurs :
 
 ```sql
 -- #Middleware(Order = 1000, After = true)
@@ -54,10 +54,10 @@ BEGIN
         RETURN;
     END
 
-    -- Retrieve the "message" property from the error JSON
+    -- On récupère la propriété "message" du JSON d'erreur
     SET @error_message = JSON_VALUE(@error, '$.message');
 
-    -- If it's not a JSON, we don't handle it (SQListe will return an HTTP 500)
+    -- Si ce n'est pas un JSON, on ne le gère pas (SQListe retournera un HTTP 500)
     IF (ISJSON(@error_message) = 0)
     BEGIN
         RAISERROR(@error_message, 18, 1);
@@ -68,7 +68,7 @@ BEGIN
     DECLARE @response_body NVARCHAR(MAX);
     DECLARE @response_headers NVARCHAR(MAX) = N'{ "Content-Type": "application/json" }';
 
-    -- Parse the JSON and perform our processing
+    -- On déchiffre le JSON et on réalise notre traitement
     DECLARE
         @message NVARCHAR(MAX),
         @status INT
@@ -100,4 +100,4 @@ END
 GO
 ```
 
-In this example, the message passed to RAISERROR is a JSON object on which we perform processing to alter the response appropriately.
+Dans cet exemple, le message passé au _RAISERROR_ est un JSON, sur lequel nous réalisons un traitement afin d'altérer la réponse de manière adaptée.

@@ -4,33 +4,32 @@ sidebar_position: 2
 
 # Structure
 
-## Schémas
+## Schemas
 
-La base de donnée connectée se retrouve organisée sur 3 schémas après exécution de la migration.
+After executing the migration, the connected database is organized into 3 schemas.
 
-### Schéma _sqliste_
+### Schema sqliste
 
-Ce schéma contient toutes les procédures nécessaires au bon fonctionnement de SQListe.
+This schema contains all the procedures necessary for the proper functioning of SQListe.
 
-On y retrouve les procédures permettant l'introspection de la base de données, ainsi que la génération et l'obtention du JSON OpenAPI.
+It includes procedures for introspecting the database, as well as generating and obtaining the OpenAPI JSON.
 
 :::info
 
-Le bon fonctionnement de l'applicatif ne saurait-être garanti en cas de modification d'une de ces procédures sans consultation préalable de la documentation.
+The proper functioning of the application cannot be guaranteed if any of these procedures are modified without prior consultation of the documentation.
 
 :::
 
-### Schéma _web_
+### Schema _web_
 
-Ce schéma est destiné à accueillir les procédures définissant des contrôleurs et des middlewares.   
+This schema is intended to host procedures defining controllers and middlewares.
 
 :::caution
 
-Tout objet présent dans ce schéma peut potentiellement être exposé via l'API web : n'y mettez pas vos objets métiers et autres procédures sensibles.
+Any object present in this schema can potentially be exposed via the web API. Do not place your business objects and other sensitive procedures in this schema.
 
 :::
 
-### Schéma _dbo_ / schéma par défaut
+### Schema _dbo_ / Default Schema
 
-Le schéma par défaut n'est pas utilisé par SQListe : vous pouvez donc y développer sereinement en ayant la 
-garantie que rien ne pourra être appelé depuis le web sans passer par une procédure du schéma _web_. 
+The default schema is not used by SQListe. Therefore, you can safely develop in this schema, knowing that nothing can be called from the web without going through a procedure in the _web_ schema.

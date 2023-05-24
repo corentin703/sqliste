@@ -4,74 +4,73 @@ sidebar_position: 1
 
 # Cookies
 
-Un cookie est une donnée stockée dans le navigateur, généralement limitée à 4ko, et qui sera jointe à chaque requête.<br/>
-Ils permettent par exemple de mémoriser des préférences utilisateurs, ou encore de faire le lien entre un utilisateur et sa session HTTP.
+A cookie is data stored in the browser, typically limited to 4KB, and it will be sent with each request.
+They allow, for example, remembering user preferences or linking a user to their HTTP session.
 
-## Lecture
+## Reading
 
-Les cookies peuvent-être lu dans un dictionnaire clé/valeur disponible dans le paramètre standard _request_cookies_.<br/>
-La clé correspondra au nom de votre cookie, et la valeur à la donnée contenue dedans.
+Cookies can be read from a key-value dictionary available in the standard parameter request_cookies.
+The key corresponds to the name of your cookie, and the value corresponds to the data contained within it.
 
-Exemple de lecture : un cookie comptant le nombre de requêtes de l'utilisateur.
+Here's an example of reading a cookie that counts the number of user requests.
 
 ```sql
-#Route("/api/exemple/cookie")
-#HttpGet("ExempleCookie")
-CREATE OR ALTER PROCEDURE [web].[p_exemple_cookie]
+#Route("/api/example/cookie")
+#HttpGet("ExampleCookie")
+CREATE OR ALTER PROCEDURE [web].[p_example_cookie]
     @request_cookies NVARCHAR(MAX) 
 AS 
 BEGIN
     DECLARE @visit_counter BIGINT;
     
-    -- On récupère la valeur du cookie nommé "visitCounter"
+    -- Retrieve the value of the "visitCounter" cookie
     SET @visit_counter = ISNULL(JSON_VALUE(@request_cookies, '$.visitCounter'), 0) + 1;
 
     IF (@visit_counter = 1)
     BEGIN
         SELECT 
-             '{ "message": "C''est votre première visite. Soyez le bienvenu !" }' AS [response_body]
+             '{ "message": "This is your first visit. Welcome!" }' AS [response_body]
             ,200 AS [response_status]
         ;
         RETURN;
     END 
 
     SELECT 
-         '{ "message": "C''est votre visite n°' + @visit_counter + ' !" }' AS [response_body]
+         '{ "message": "This is your visit number ' + CAST(@visit_counter AS NVARCHAR(MAX)) + '!" }' AS [response_body]
         ,200 AS [response_status]
     ;
 END
 GO
 ```
 
-## Écriture
+## Writing
 
-Pour écrire, ou altérer un cookie, il faut altérer le paramètre _response_cookies_.<br/>
-Contrairement à la lecture, il ne s'agit pas d'un dictionnaire, mais d'un tableau de paramètres, permettant de définir plusieurs propriétés aux cookies.
+To write or modify a cookie, you need to modify the response_cookies parameter.
+Unlike reading, it's not a dictionary but an array of parameters that allows you to define multiple properties for cookies.
 
-Description d'un paramétrage de cookie :
+Description of a cookie configuration:
 ```json lines
 {
-  "name": "nom",
-  "value": "valeur",
-  "expires": "2023-06-12T00:00:00", // Date d'expiration au format [ISO 8601](https://fr.wikipedia.org/wiki/ISO_8601)
-  "domain": "Domaine de validité", // Par défaut le domaine correspondant à l'origine. Vous pouvez définir votre domaine racine pour inclure tous vos sous-domaines. Si vous mettez un autre domaine, gardez en tête que les cookies _cross-origin_ étant en passe de disparaitre.
-  "path": "/api/exemple", // Le cookie ne sera envoyé que si la route commence par /api/exemple
-  "secure": true, // Le cookie ne sera envoyé que lorsque la connexion sera en HTTPS
-  "sameSite": "Lax", // Permet de définir la politique d'envoie du cookie lors de requêtes vers d'autres sites
-  "httpOnly": false, // Rend le cookie inaccessible via du JavaScript
-  "maxAge": 3600 // Durée de vie maximum du cookie (exprimé en secondes), complémentaire du paramètre _expires_, qui lui prend une date
+  "name": "name",
+  "value": "value",
+  "expires": "2023-06-12T00:00:00", // Expiration date in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format
+  "domain": "Domain of validity", // By default, the domain corresponds to the origin. You can set your root domain to include all your subdomains. If you specify another domain, keep in mind that cross-origin cookies are being phased out.
+  "path": "/api/example", // The cookie will only be sent if the route starts with /api/example
+  "secure": true, // The cookie will only be sent when the connection is HTTPS
+  "sameSite": "Lax", // Defines the cookie sending policy for requests to other sites
+  "httpOnly": false, // Makes the cookie inaccessible via JavaScript
+  "maxAge": 3600 // Maximum lifetime of the cookie (in seconds), complementary to the `expires` parameter, which takes a date
 }
 ```
 
-Pour en savoir plus sur les cookies, ainsi que les possibilités de ces paramètres, vous pouvez consulter cette [ressource](https://developer.mozilla.org/fr/docs/Web/HTTP/Cookies) qui détaille l'utilité de chacun.<br/>
-Les paramètres obligatoires dans ce modèle sont ```name``` et ```value``` ainsi que ```expires``` ou ```maxAge``` au choix.
+To learn more about cookies and the possibilities of these parameters, you can refer to this [resource](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies)  that details the purpose of each parameter. The mandatory parameters in this template are ```name``` and ```value```, along with either ```expires``` or ```maxAge``` (you can choose one).
 
-Reprenons notre exemple précédent, en y ajoutant le code nécessaire pour définir le cookie s'il n'existe pas, ou le mettre à jour.
+Let's continue with our previous example by adding the necessary code to set or update the cookie if it doesn't exist.
 
 ```sql
-#Route("/api/exemple/cookie")
-#HttpGet("ExempleCookie")
-CREATE OR ALTER PROCEDURE [web].[p_exemple_cookie]
+#Route("/api/example/cookie")
+#HttpGet("ExampleCookie")
+CREATE OR ALTER PROCEDURE [web].[p_example_cookie]
     @request_cookies NVARCHAR(MAX),
     @response_cookies NVARCHAR(MAX)
 AS 
@@ -79,10 +78,10 @@ BEGIN
     DECLARE @visit_counter BIGINT;
     DECLARE @visit_counter_cookie NVARCHAR(MAX);
     
-    -- On récupère la valeur actuelle
+    -- Retrieve the current value
     SET @visit_counter = ISNULL(JSON_VALUE(@request_cookies, '$.visitCounter'), 0) + 1;
 
-    -- On paramètre notre cookie
+    -- Set up our cookie
     SET @visit_counter_cookie = (
         SELECT 
             'visitCounter' AS [name],
@@ -91,16 +90,16 @@ BEGIN
         FOR JSON PATH
     );
     
-    -- FOR JSON PATH retournant systèmatiquement un tableau, on récupère le premier élément (le seul existant ici)
+    -- Since FOR JSON PATH always returns an array, we retrieve the first element (the only one here)
     SET @visit_counter_cookie = JSON_QUERY(@visit_counter_cookie, '$[0]');
 
-    -- On l'ajoute à la liste des cookies que l'on souhaite altérer
+    -- Add it to the list of cookies we want to modify
     SET @response_cookies = JSON_MODIFY(@response_cookies, 'append $', @visit_counter_cookie); 
 
     IF (@visit_counter = 1)
     BEGIN
         SELECT 
-             '{ "message": "C''est votre première visite. Soyez le bienvenu !" }' AS [response_body]
+             '{ "message": "This is your first visit. Welcome!" }' AS [response_body]
             ,200 AS [response_status]
             ,@response_cookies AS [response_cookies]
         ;
@@ -108,7 +107,7 @@ BEGIN
     END 
 
     SELECT 
-         '{ "message": "C''est votre visite n°' + @visit_counter + ' !" }' AS [response_body]
+         '{ "message": "This is your visit number ' + CAST(@visit_counter AS NVARCHAR(MAX)) + '!" }' AS [response_body]
         ,200 AS [response_status]
         ,@response_cookies AS [response_cookies]
     ;
