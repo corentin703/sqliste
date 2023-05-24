@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksqliste_doc=self.webpackChunksqliste_doc||[]).push([[7740],{267:s=>{s.exports=JSON.parse('{"label":"facebook","permalink":"/sqliste/fr/blog/tags/facebook","allTagsPath":"/sqliste/fr/blog/tags","count":1}')}}]);
