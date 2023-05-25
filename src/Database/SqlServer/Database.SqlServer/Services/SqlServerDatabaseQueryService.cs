@@ -2,13 +2,13 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Models.Sql;
+using Sqliste.Database.Common.Contracts.Services;
 using Sqliste.Database.SqlServer.Configuration;
 
 namespace Sqliste.Database.SqlServer.Services;
 
-public class SqlServerDatabaseQueryService : IDatabaseQueryService, IDisposable
+internal class SqlServerDatabaseQueryService : IDatabaseQueryService, IDisposable
 {
     private readonly SqlConnection _sqlConnection;
     private readonly ILogger<SqlServerDatabaseQueryService> _logger;
@@ -87,7 +87,7 @@ public class SqlServerDatabaseQueryService : IDatabaseQueryService, IDisposable
 
             _logger.LogDebug("Param {ParamName} added", parameter.Name);
             string escapingAlias = $"{parameter.Name}_ESC";
-            queryParams.Add(escapingAlias, value, direction: parameter.Direction);
+            queryParams.Add(escapingAlias, value);
             query = $"{query} @{parameter.Name} = @{escapingAlias},";
         }
 

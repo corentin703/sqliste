@@ -1,12 +1,12 @@
 ﻿using Coravel.Invocable;
 using Microsoft.Extensions.Logging;
 using Sqliste.Core.Contracts.Services;
-using Sqliste.Core.Contracts.Services.Database;
+using Sqliste.Database.Common.Contracts.Services;
 using Sqliste.Database.SqlServer.SqlQueries;
 
 namespace Sqliste.Database.SqlServer.Jobs.Scheduling;
 
-public class DatabaseAppEventCleaningInvocable : IInvocable
+internal class DatabaseAppEventCleaningInvocable : IInvocable
 {
     private readonly IDatabaseQueryService _databaseQueryService;
     private readonly ILogger<DatabaseAppEventCleaningInvocable> _logger;

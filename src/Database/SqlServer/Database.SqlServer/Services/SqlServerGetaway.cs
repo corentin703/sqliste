@@ -1,17 +1,15 @@
-using System.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
-using Sqliste.Core.Contracts.Services.Database;
-using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Pipeline;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Core.Utils;
+using Sqliste.Database.Common.Contracts.Services;
 using Sqliste.Database.SqlServer.Models;
 using Sqliste.Database.SqlServer.SqlQueries;
 
 namespace Sqliste.Database.SqlServer.Services;
 
-public class SqlServerGetaway : IDatabaseGateway
+internal class SqlServerGetaway : IDatabaseGateway
 {
     private readonly ILogger<SqlServerGetaway> _logger;
     private readonly IDatabaseQueryService _databaseQueryService;
@@ -93,7 +91,6 @@ public class SqlServerGetaway : IDatabaseGateway
             {
                 Name = arg.Name,
                 SqlDataType = arg.SqlDataType,
-                Direction = arg.IsOutput ? ParameterDirection.InputOutput : ParameterDirection.Input,
                 IsSystemParam = SystemParamsUtils.GetAll().Contains(arg.Name), // arg.Name == "body" || arg.Name == "headers" || arg.Name == "cookies" || arg.Name == "data_bag",
             }
         ).ToList() ?? new List<ProcedureArgumentModel>();

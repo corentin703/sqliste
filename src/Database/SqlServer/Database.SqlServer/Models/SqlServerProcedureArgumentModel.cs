@@ -1,10 +1,9 @@
 ﻿using DapperCodeFirstMappings.Attributes;
-using Microsoft.OpenApi.Models;
 
 namespace Sqliste.Database.SqlServer.Models;
 
 [DapperEntity]
-public class SqlServerProcedureArgumentModel
+internal class SqlServerProcedureArgumentModel
 {
     [DapperColumn("name")]
     public string Name { get; set; } = string.Empty;

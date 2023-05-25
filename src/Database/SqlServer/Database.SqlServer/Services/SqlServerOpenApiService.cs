@@ -1,13 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
-using Sqliste.Core.Contracts.Services.Database;
 using Sqliste.Core.Models;
+using Sqliste.Database.Common.Contracts.Services;
 using Sqliste.Database.SqlServer.SqlQueries;
 
 namespace Sqliste.Database.SqlServer.Services;
 
-public class SqlServerOpenApiService : IDatabaseOpenApiService
+internal class SqlServerOpenApiService : IDatabaseOpenApiService
 {
     private readonly IDatabaseQueryService _databaseQueryService;
     private readonly ILogger<SqlServerOpenApiService> _logger;

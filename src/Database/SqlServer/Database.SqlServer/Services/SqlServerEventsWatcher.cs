@@ -1,10 +1,8 @@
-﻿using System.Data;
-using Coravel.Queuing.Interfaces;
+﻿using Coravel.Queuing.Interfaces;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Contracts.Services.Events;
 using Sqliste.Core.Jobs.Queuing;
 using Sqliste.Core.Models.Events;
@@ -12,7 +10,7 @@ using Sqliste.Database.SqlServer.Configuration;
 
 namespace Sqliste.Database.SqlServer.Services;
 
-public class SqlServerEventsWatcher : IDisposable, IDatabaseEventWatcher
+internal class SqlServerEventsWatcher : IDisposable, IDatabaseEventWatcher
 {
     private SqlConnection? _sqlConnection;
     private SqlDependency? _sqlDependency;

@@ -23,18 +23,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\Database\SqlServer\Database.SqlServer\SqlServer.csproj" />
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Update="appsettings.Development.json">
       <DependentUpon>appsettings.json</DependentUpon>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Extensions\ServiceCollection\" />
   </ItemGroup>
 
 </Project>

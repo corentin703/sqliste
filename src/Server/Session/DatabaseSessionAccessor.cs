@@ -1,4 +1,4 @@
-using Sqliste.Core.Contracts.Services.Database;
+using Sqliste.Database.Common.Contracts.Services;
 
 namespace Sqliste.Server.Session;
 

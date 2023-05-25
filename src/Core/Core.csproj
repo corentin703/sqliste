@@ -28,8 +28,4 @@
     <PackageReference Include="Microsoft.OpenApi" Version="1.6.4" />
     <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.4" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Utils\Events\" />
-  </ItemGroup>
 </Project>
