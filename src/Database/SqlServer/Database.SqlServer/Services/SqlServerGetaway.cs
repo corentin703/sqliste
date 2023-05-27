@@ -75,7 +75,7 @@ internal class SqlServerGetaway : IDatabaseGateway
             return new List<ProcedureModel>();
         }
 
-        _logger.LogInformation("Queried {Number}", procedures.Count);
+        _logger.LogInformation("Queried {Number} procedures", procedures.Count);
         return procedures;
     }
 
@@ -95,7 +95,7 @@ internal class SqlServerGetaway : IDatabaseGateway
             }
         ).ToList() ?? new List<ProcedureArgumentModel>();
 
-        _logger.LogInformation("Got {Number} params for {ProcedureName}", procedureArgs.Count, procedureName);
+        _logger.LogDebug("Got {Number} params for {ProcedureName}", procedureArgs.Count, procedureName);
 
         return procedureArgs;
     }
