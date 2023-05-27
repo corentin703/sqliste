@@ -9,6 +9,6 @@ CREATE TABLE [sqliste].[app_events] (
     [name]        VARCHAR (250)  NOT NULL,
     [args]        NVARCHAR (MAX) NULL,
     [inserted_at] DATETIME       CONSTRAINT [DEFAULT_app_events_inserted_at] DEFAULT (getdate()) NOT NULL,
-    PRIMARY KEY CLUSTERED ([id] DESC),
-    CONSTRAINT [CK_app_events_type] CHECK ([type]='CUSTOM' OR [type]='SYS')
-);
+    PRIMARY KEY CLUSTERED ([id] DESC)
+    );
+GO

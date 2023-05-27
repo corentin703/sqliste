@@ -1,3 +1,4 @@
+using Sqliste.Database.Common.Extensions.ServiceCollection;
 using Sqliste.Database.SqlServer.Extensions.Host;
 using Sqliste.Database.SqlServer.Extensions.ServiceCollection;
 using Sqliste.Server.Exceptions.DatabaseConnectors;
@@ -10,6 +11,8 @@ public static class DatabaseConnectorExtensions
     
     public static WebApplicationBuilder AddDatabaseConnector(this WebApplicationBuilder builder)
     {
+        builder.Services.AddDatabaseCommons(builder.Configuration);
+        
         string? connectorType = builder.Configuration.GetValue<string>(ConnectorConfigKey);
         if (string.IsNullOrEmpty(connectorType))
             throw new NoDatabaseConnectorGivenException();
