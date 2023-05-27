@@ -13,9 +13,10 @@ public static class AddSqlisteInfrastructureExtensions
     {
         services.AddScoped<IPipelineModelsFactory, PipelineModelsFactory>();
         services.AddScoped<IProcedureResolver, ProcedureResolver>();
-        services.AddScoped<ISqlisteIntrospectionService, SqlisteIntrospectionService>();
+        services.AddScoped<IParametersResolver, ParametersResolver>();
+        services.AddScoped<IIntrospectionService, IntrospectionService>();
         services.AddScoped<IRequestHandler, RequestHandler>();
-        services.AddScoped<ISqlisteOpenApiGenerator, SqlisteOpenApiGenerator>();
+        services.AddScoped<IOpenApiGenerator, OpenApiGenerator>();
         services.AddTransient<IDatabaseEventDispatcher, DatabaseEventDispatcher>();
         services.AddTransient<IDatabaseEventHandlerResolver, DatabaseEventHandlerResolver>();
         services.AddTransient<DatabaseEventInvocable>();

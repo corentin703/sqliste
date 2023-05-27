@@ -14,17 +14,17 @@ using Sqliste.Database.Common.Contracts.Services;
 
 namespace Sqliste.Infrastructure.Services;
 
-internal class SqlisteIntrospectionService : ISqlisteIntrospectionService
+internal class IntrospectionService : IIntrospectionService
 {
     private const string ProcedureToRoutePattern = @"p_(?<resource>\w+)_(?<action>\w+)";
 
     private readonly IMemoryCache _memoryCache;
-    private readonly ILogger<SqlisteIntrospectionService> _logger;
+    private readonly ILogger<IntrospectionService> _logger;
     private readonly IDatabaseGateway _databaseGateway;
 
     private const string IntrospectionCacheKey = "DatabaseIntrospection";
 
-    public SqlisteIntrospectionService(IMemoryCache memoryCache, ILogger<SqlisteIntrospectionService> logger, IDatabaseGateway databaseGateway)
+    public IntrospectionService(IMemoryCache memoryCache, ILogger<IntrospectionService> logger, IDatabaseGateway databaseGateway)
     {
         _memoryCache = memoryCache;
         _logger = logger;

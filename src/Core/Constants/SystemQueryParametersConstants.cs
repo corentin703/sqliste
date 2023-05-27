@@ -11,6 +11,7 @@ public static class SystemQueryParametersConstants
     public const string RequestHeaders = "request_headers";
     public const string RequestCookies = "request_cookies";
     public const string RequestPath = "request_path";
+    public const string RequestMethod = "request_method";
     public const string QueryParams = "query_params";
     public const string PathParams = "path_params";
 

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Primitives;
 using Sqliste.Core.Constants;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Exceptions.Services.HttpModelFactoryService;
+using Sqliste.Core.Extensions;
 using Sqliste.Core.Models.Http.FormData;
 using Sqliste.Core.Models.Pipeline;
 using Sqliste.Core.Models.Sql;
@@ -31,7 +32,7 @@ internal class PipelineModelsFactory : IPipelineModelsFactory
     {
         HttpRequest request = _httpContextAccessor.HttpContext.Request;
 
-        HttpMethod httpMethod = GetHttpMethodFromString(request.Method);
+        HttpMethod httpMethod = HttpMethodExtensions.Parse(request.Method);
         string? bodyContent = await ParseRequestBodyAsync(request, cancellationToken);
         Dictionary<string, FormDataItem>? formData = await ParseRequestFormDataAsync(request, cancellationToken);
         
@@ -77,19 +78,6 @@ internal class PipelineModelsFactory : IPipelineModelsFactory
         };
 
         return pipelineModel;
-    }
-
-    private HttpMethod GetHttpMethodFromString(string method)
-    {
-        return method switch
-        {
-            "GET" => HttpMethod.Get,
-            "POST" => HttpMethod.Post,
-            "PATCH" => HttpMethod.Patch,
-            "PUT" => HttpMethod.Put,
-            "DELETE" => HttpMethod.Delete,
-            _ => HttpMethod.Get
-        };
     }
 
     private bool IsFormDataRequest(HttpRequest request)

@@ -22,7 +22,7 @@ END
 GO
 ```
 
-## Paramètres d'URI
+## URI parameters
 
 A URI parameter is an argument provided as follows in a URI: ```/api/exemple?name=Corentin```<br/>
 To retrieve its value, simply include it as an argument in the stored procedure:

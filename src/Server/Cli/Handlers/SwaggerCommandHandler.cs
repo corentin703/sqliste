@@ -4,10 +4,10 @@ namespace Sqliste.Server.Cli.Handlers;
 
 public class SwaggerCommandHandler
 {
-    private readonly ISqlisteOpenApiGenerator _openApiGenerator;
+    private readonly IOpenApiGenerator _openApiGenerator;
     private readonly ILogger<SwaggerCommandHandler> _logger;
 
-    public SwaggerCommandHandler(ISqlisteOpenApiGenerator openApiGenerator, ILogger<SwaggerCommandHandler> logger)
+    public SwaggerCommandHandler(IOpenApiGenerator openApiGenerator, ILogger<SwaggerCommandHandler> logger)
     {
         _openApiGenerator = openApiGenerator;
         _logger = logger;

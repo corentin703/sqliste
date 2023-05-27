@@ -12,27 +12,27 @@ using Sqliste.Database.Common.Contracts.Services;
 
 namespace Sqliste.Infrastructure.Services;
 
-internal class SqlisteOpenApiGenerator : ISqlisteOpenApiGenerator
+internal class OpenApiGenerator : IOpenApiGenerator
 {
-    private readonly ILogger<SqlisteOpenApiGenerator> _logger;
-    private readonly ISqlisteIntrospectionService _sqlisteIntrospectionService;
+    private readonly ILogger<OpenApiGenerator> _logger;
+    private readonly IIntrospectionService _introspectionService;
     private readonly IDatabaseOpenApiService _databaseOpenApiService;
 
     private const string ResourceRouteRegexPattern = @"^(\/api)?\/(?<resource>\w+).*$";
 
-    public SqlisteOpenApiGenerator(
-        ILogger<SqlisteOpenApiGenerator> logger, 
-        ISqlisteIntrospectionService sqlisteIntrospectionService, IDatabaseOpenApiService databaseOpenApiService)
+    public OpenApiGenerator(
+        ILogger<OpenApiGenerator> logger, 
+        IIntrospectionService introspectionService, IDatabaseOpenApiService databaseOpenApiService)
     {
         _logger = logger;
-        _sqlisteIntrospectionService = sqlisteIntrospectionService;
+        _introspectionService = introspectionService;
         _databaseOpenApiService = databaseOpenApiService;
     }
 
     public async Task<string> GenerateOpenApiJsonAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogDebug("Generating OpenApiDocument");
-        DatabaseIntrospectionModel introspection = await _sqlisteIntrospectionService.IntrospectAsync(cancellationToken);
+        DatabaseIntrospectionModel introspection = await _introspectionService.IntrospectAsync(cancellationToken);
 
         OpenApiPaths paths = new();
         foreach (ProcedureModel procedure in introspection.Endpoints)

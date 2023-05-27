@@ -12,10 +12,10 @@ public static class IntrospectionExtensions
         ILogger logger = host.Services.GetRequiredService<ILogger>();
 
         await using AsyncServiceScope scope = host.Services.CreateAsyncScope();
-        ISqlisteIntrospectionService sqlisteIntrospectionService =
-            scope.ServiceProvider.GetRequiredService<ISqlisteIntrospectionService>();
+        IIntrospectionService introspectionService =
+            scope.ServiceProvider.GetRequiredService<IIntrospectionService>();
         
-        await sqlisteIntrospectionService.IntrospectAsync();
+        await introspectionService.IntrospectAsync();
             
         logger.LogInformation("Initial introspection run with success");
     }

@@ -142,3 +142,7 @@ La taille d'un URI étant limitée à maximum 2048 caractères, des problèmes d
 _Certains serveurs permettent d'augmenter cette limite, cependant il convient de vérifier que le client HTTP / navigateur prenne cette augmentation en charge._
 
 :::
+
+## Consommer le corp d'une requête
+
+

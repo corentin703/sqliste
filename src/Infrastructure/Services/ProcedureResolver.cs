@@ -6,9 +6,9 @@ namespace Sqliste.Infrastructure.Services;
 
 internal class ProcedureResolver : IProcedureResolver
 {
-    private readonly ISqlisteIntrospectionService _introspectionService;
+    private readonly IIntrospectionService _introspectionService;
 
-    public ProcedureResolver(ISqlisteIntrospectionService introspectionService)
+    public ProcedureResolver(IIntrospectionService introspectionService)
     {
         _introspectionService = introspectionService;
     }

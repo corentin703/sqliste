@@ -9,20 +9,20 @@ namespace Sqliste.Infrastructure.Services.Events;
 [SystemEventHandler("WebSchemaUpdate")]
 internal class WebSchemaUpdateSystemDatabaseEventHandler : IDatabaseEventHandler
 {
-    private readonly ISqlisteIntrospectionService _sqlisteIntrospectionService;
+    private readonly IIntrospectionService _introspectionService;
     private readonly ILogger<WebSchemaUpdateSystemDatabaseEventHandler> _logger;
 
-    public WebSchemaUpdateSystemDatabaseEventHandler(ISqlisteIntrospectionService sqlisteIntrospectionService, ILogger<WebSchemaUpdateSystemDatabaseEventHandler> logger)
+    public WebSchemaUpdateSystemDatabaseEventHandler(IIntrospectionService introspectionService, ILogger<WebSchemaUpdateSystemDatabaseEventHandler> logger)
     {
-        _sqlisteIntrospectionService = sqlisteIntrospectionService;
+        _introspectionService = introspectionService;
         _logger = logger;
     }
 
     public async Task Handle(EventModel model)
     {
         _logger.LogInformation("Detected change in web schema's procedures");
-        _sqlisteIntrospectionService.Clear();
-        await _sqlisteIntrospectionService.IntrospectAsync();
+        _introspectionService.Clear();
+        await _introspectionService.IntrospectAsync();
         _logger.LogInformation("Introspection done");
     }
 }

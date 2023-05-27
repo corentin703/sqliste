@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Sqliste.Core.Constants;
 using Sqliste.Core.Contracts.Services;
-using Sqliste.Core.Models.Http.FormData;
 using Sqliste.Core.Models.Pipeline;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Database.Common.Contracts.Services;
@@ -13,19 +12,25 @@ namespace Sqliste.Infrastructure.Services;
 
 internal class RequestHandler : IRequestHandler
 {
-    private readonly ISqlisteIntrospectionService _introspectionService;
+    private readonly IIntrospectionService _introspectionService;
     private readonly ILogger<RequestHandler> _logger;
     private readonly IDatabaseSessionAccessor _sessionAccessor;
     private readonly IDatabaseGateway _databaseGateway;
+    private readonly IParametersResolver _parametersResolver;
     
     public RequestHandler(
-        ISqlisteIntrospectionService introspectionService,
-        ILogger<RequestHandler> logger, IDatabaseSessionAccessor sessionAccessor, IDatabaseGateway databaseGateway)
+        IIntrospectionService introspectionService,
+        ILogger<RequestHandler> logger, 
+        IDatabaseSessionAccessor sessionAccessor, 
+        IDatabaseGateway databaseGateway, 
+        IParametersResolver parametersResolver
+    )
     {
         _introspectionService = introspectionService;
         _logger = logger;
         _sessionAccessor = sessionAccessor;
         _databaseGateway = databaseGateway;
+        _parametersResolver = parametersResolver;
     }
 
     public async Task<PipelineBag> HandleRequestAsync(PipelineBag pipeline, CancellationToken cancellationToken = default)
@@ -85,7 +90,7 @@ internal class RequestHandler : IRequestHandler
                     continue;
             }
 
-            Dictionary<string, object?> sqlParams = await GetParamsAsync(pipeline, middleware, cancellationToken);
+            Dictionary<string, object?> sqlParams = await _parametersResolver.GetParamsAsync(pipeline, middleware, cancellationToken);
             PipelineResponseBag? middlewareResponse = await _databaseGateway.ExecProcedureAsync(pipeline.Request, middleware, sqlParams, cancellationToken);
 
             if (middlewareResponse == null)
@@ -113,7 +118,7 @@ internal class RequestHandler : IRequestHandler
         CancellationToken cancellationToken = default
     )
     {
-        Dictionary<string, object?> sqlParams = await GetParamsAsync(pipeline, procedure, cancellationToken);
+        Dictionary<string, object?> sqlParams = await _parametersResolver.GetParamsAsync(pipeline, procedure, cancellationToken);
         PipelineResponseBag? response = await _databaseGateway.ExecProcedureAsync(pipeline.Request, procedure, sqlParams, cancellationToken);
         pipeline.Response = MergeResponses(pipeline.Response, response);
 
@@ -146,75 +151,5 @@ internal class RequestHandler : IRequestHandler
             mergedResponse.Error = null;
 
         return mergedResponse;
-    }
-
-    private async Task<Dictionary<string, object?>> GetParamsAsync(PipelineBag pipeline, ProcedureModel procedure, CancellationToken cancellationToken)
-    {
-        Dictionary<string, object?> sqlParams = new();
-
-        #region Request
-
-        foreach (KeyValuePair<string, string> uriParam in pipeline.Request.PathParams)
-        {
-            sqlParams.TryAdd(uriParam.Key, uriParam.Value);
-        }
-
-        foreach (KeyValuePair<string, string> queryParam in pipeline.Request.QueryParams)
-        {
-            sqlParams.TryAdd(queryParam.Key, queryParam.Value);
-        }
-
-        sqlParams.TryAdd(SystemQueryParametersConstants.RequestBody, pipeline.Request.Body);
-        sqlParams.TryAdd(SystemQueryParametersConstants.RequestContentType, pipeline.Request.ContentType);
-        sqlParams.TryAdd(SystemQueryParametersConstants.RequestCookies, pipeline.Request.Cookies ?? "{}");
-        sqlParams.TryAdd(SystemQueryParametersConstants.RequestHeaders, pipeline.Request.Headers ?? "{}");
-        sqlParams.TryAdd(SystemQueryParametersConstants.RequestPath, pipeline.Request.Path);
-        sqlParams.TryAdd(SystemQueryParametersConstants.PathParams, JsonSerializer.Serialize(pipeline.Request.PathParams));
-        sqlParams.TryAdd(SystemQueryParametersConstants.QueryParams, JsonSerializer.Serialize(pipeline.Request.QueryParams));
-        sqlParams.TryAdd(SystemQueryParametersConstants.RequestModel, JsonSerializer.Serialize(pipeline.Request));
-        AddFormDataParameters(sqlParams, pipeline);
-        
-        #endregion
-
-        #region Response
-
-        sqlParams.TryAdd(SystemQueryParametersConstants.ResponseBody, pipeline.Response.Body);
-        sqlParams.TryAdd(SystemQueryParametersConstants.ResponseCookies, pipeline.Response.Cookies ?? "{}");
-        sqlParams.TryAdd(SystemQueryParametersConstants.PipelineStorage, pipeline.Response.PipelineStorage);
-        sqlParams.TryAdd(SystemQueryParametersConstants.ResponseHeaders, pipeline.Response.Headers ?? "{}");
-        sqlParams.TryAdd(SystemQueryParametersConstants.ResponseStatus, pipeline.Response.Status);
-        sqlParams.TryAdd(SystemQueryParametersConstants.ResponseContentType, pipeline.Response.ContentType ?? procedure.ContentType);
-        sqlParams.TryAdd(SystemQueryParametersConstants.ResponseModel, JsonSerializer.Serialize(pipeline.Response));
-
-        #endregion
-
-        if (procedure.Arguments.Any(arg => arg.Name == SystemQueryParametersConstants.Session))
-        {
-            string? session = await _sessionAccessor.GetSessionAsync(cancellationToken);
-            sqlParams.TryAdd(SystemQueryParametersConstants.Session, session);
-        }
-
-        if (pipeline.Response.Error != null)
-            sqlParams.TryAdd(SystemQueryParametersConstants.Error, JsonSerializer.Serialize(pipeline.Response.Error));
-
-        _logger.LogDebug("Added {ParamCount} for {ProcedureName}", sqlParams.Count, procedure.Name);
-        return sqlParams;
-    }
-
-    private void AddFormDataParameters(Dictionary<string, object?> sqlParams, PipelineBag pipeline)
-    {
-        if (pipeline.Request.FormData == null) 
-            return;
-        
-        sqlParams.TryAdd(SystemQueryParametersConstants.RequestFormData, JsonSerializer.Serialize(pipeline.Request.FormData));
-
-        List<FormDataFile> files = pipeline.Request.FormData
-            .Select(item => item.Value)
-            .Where(value => value is FormDataFile).Cast<FormDataFile>().ToList();
-            
-        foreach (FormDataFile file in files)
-        {
-            sqlParams.TryAdd($"{SystemQueryParametersConstants.RequestFormFilePrefix}{file.Name}", file.Content);
-        }
     }
 }

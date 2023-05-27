@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.OpenApi.Models;
 using Moq;
 using Sqliste.Core.Contracts.Services;
+using Sqliste.Core.Extensions;
 using Sqliste.Core.Models.Http;
 using Sqliste.Core.Models.Sql;
 using Sqliste.Infrastructure.Services;
@@ -14,7 +15,7 @@ public class ProcedureResolverTests
 
     public ProcedureResolverTests()
     {
-        Mock<ISqlisteIntrospectionService> fakeIntrospectionService = new();
+        Mock<IIntrospectionService> fakeIntrospectionService = new();
 
         DatabaseIntrospectionModel fakeIntrospection = new()
         {
@@ -151,19 +152,6 @@ public class ProcedureResolverTests
         _procedureResolver = new ProcedureResolver(fakeIntrospectionService.Object);
     }
 
-    private HttpMethod GetMethodFromString(string method)
-    {
-        return method.ToLower() switch
-        {
-            "get" => HttpMethod.Get,
-            "post" => HttpMethod.Post,
-            "put" => HttpMethod.Put,
-            "patch" => HttpMethod.Patch,
-            "delete" => HttpMethod.Delete,
-            _ => HttpMethod.Get,
-        };
-    }
-    
     [Theory]
     [InlineData("/api/test", "get", "p_test")]
     [InlineData("/api/test/number/15", "patch", "p_test_params_number")]
@@ -174,7 +162,7 @@ public class ProcedureResolverTests
     [InlineData("/api/test/number_opt", "put", "p_test_params_number_optional")]
     public async Task TestProcedureResolutionAsync(string route, string method, string expectedProcedureName)
     {
-        ProcedureModel? procedure = await _procedureResolver.ResolveProcedureAsync(route, GetMethodFromString(method));
+        ProcedureModel? procedure = await _procedureResolver.ResolveProcedureAsync(route, HttpMethodExtensions.Parse(method));
         procedure.Should().NotBeNull();
         procedure?.Name.Should().Be(expectedProcedureName);
     }
