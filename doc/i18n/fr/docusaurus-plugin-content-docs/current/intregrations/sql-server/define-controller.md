@@ -145,4 +145,236 @@ _Certains serveurs permettent d'augmenter cette limite, cependant il convient de
 
 ## Consommer le corp d'une requête
 
+Vous pouvez récupérer les données envoyées comme ceci grâce au paramètre standard _request_body_.<br/>
+Le format de cet élément est libre et doit correspondre au _Content-Type_ renseigné dans l'en-tête de la requête.
 
+Prenons l'exemple d'une requête sur une route permettant l'authentification d'un utilisateur, ou nous avons besoin de
+récupérer le courriel de l'utilisateur, ainsi que son mot de passe :
+```sql
+-- #Route("/api/account/login")
+-- #HttpPost("AccountLogin")
+CREATE OR ALTER PROCEDURE [web].[p_account_login] 
+    @request_body NVARCHAR(MAX), -- Les informations saisies par l'utilisateur seront stockées ici
+    @request_content_type NVARCHAR(255)
+AS 
+BEGIN
+    IF (@request_content_type <> 'application/json')
+    BEGIN
+        SELECT 
+            ,@request_content_type AS [response_content_type]
+            ,415 AS [response_status] -- 415 = Unsupported Media Type
+        ;
+        RETURN;   
+    END
+    
+    DECLARE @email NVARCHAR(1000);
+    DECLARE @password NVARCHAR(1000);
+    
+    SELECT 
+         @email = [email]
+        ,@password = [password]
+    FOR OPENJSON(@request_body)
+    WITH (
+         [email] NVARCHAR(1000)
+        ,[password] NVARCHAR(1000)
+    );
+    
+    IF (@email = 'example@email.com' AND @password = 'SuperPa$$word!!!')
+    BEGIN
+        SELECT 
+             '{ "message": "Vous êtes connecté !" }' AS [response_body]
+            ,'application/json' AS [response_content_type]
+            ,200 AS [response_status]
+        ;
+    END
+    ELSE    
+    BEGIN
+        SELECT 
+             '{ "message": "Une erreur est survenue durant la connexion" }' AS [response_body]
+            ,'application/json' AS [response_content_type]
+            ,401 AS [response_status]
+        ;
+    END
+END
+GO
+```
+
+:::caution
+
+Un corp de requête ne peut pas être joint à une requête _GET_ ou _HEAD_.<br/>
+[Pour en savoir plus](https://developer.mozilla.org/en-US/docs/Web/API/Request/body).
+
+:::
+
+## Consommer un formulaire
+
+Certains _Content-Type_ servent à matérialiser un formulaire (notamment pour la balise `<form />` en html).
+Dans ces cas-là, le _Content-Type_ vaudra soit `application/x-www-form-urlencoded` soit `multipart/form-data`.
+
+Lorsqu'une requête de ce type est transmise à SQListe, celui-ci ne va pas injecter ses données dans le paramètre 
+_request_body_, mais dans le paramètre _request_form_.
+
+Le contenu de ce paramètre sera un JSON de ce format-là :
+```json lines
+[
+  {
+    "name": "nom du champ",
+    "value": "valeur du champ" // Toujours de type string
+  },
+  {
+    "name": "nom du 2nd champ",
+    "value": "valeur du 2nd champ" // Toujours de type string
+  },
+  // ...
+]
+```
+
+:::info 
+
+Lorsque le paramètre _request_form_ n'est pas égal à _NULL_, le paramètre _request_body_ l'est.
+
+:::
+
+### Récupérer un fichier
+
+Les requêtes de type _form_, permettent d'envoyer directement des fichiers sans encodage particulier (tel que le base64).<br/>
+Lorsqu'un élément correspond à un fichier, SQListe va injecter un objet JSON au format ci-dessous dans le paramètre _request_form_ pour le champ concerné.
+```json lines
+[
+  {
+    "name": "nom d'un champ de type fichier",
+    "headers": {
+      "Content-Type": "image/png", // Type MIME correspondant au fichier
+      // ...
+    },
+    "length": 128000, // Taille du fichier (en octets)
+    "contentType": "image/png", // Raccourci pour accéder à l'en-tête "Content-Type" du fichier
+    "contentDisposition": "form-data; name=\"fieldName\"; filename=\"filename.png\"", // Raccourci pour accéder à l'en-tête "Content-Disposition" du fichier
+    "fileName": "filename.png" // Nom de fichier, extrait du "Content-Disposition"
+  },
+  {
+    "name": "nom d'un champ classique",
+    "value": "valeur du champ classique" // Toujours de type string
+  },
+  // ...
+]
+```
+
+Pour accéder au contenu du fichier, il faut récupérer un paramètre de procédure dont le nom répond au format 
+`request_form_file_<nomDuChamp>` et de type VARBINARY.
+
+Exemple : nous allons récupérer un formulaire permettant d'enregistrer un album de musique, avec la photo de sa couverture.
+```sql
+-- #Route("/api/sampleForm")
+-- #HttpPost("sampleForm")
+CREATE OR ALTER PROCEDURE [web].[p_sample_form] 
+    @request_form NVARCHAR(MAX), -- Les informations saisies par l'utilisateur seront stockées ici
+    @request_form_file_cover VARBINARY(MAX) -- Nous récupérons la couverture au format binaire, tel qu'envoyé par l'utilisateur
+AS 
+BEGIN
+    DECLARE @form_data TABLE (
+         [name] NVARCHAR(500)
+        ,[value] NVARCHAR(500)
+        ,[file_name] NVARCHAR(500)
+        ,[length] BIGINT
+    );
+    
+    INSERT INTO @form_data
+    SELECT 
+         [name]
+        ,[value]
+        ,[fileName] AS [file_name]
+        ,[length]
+    FROM OPENJSON(@request_form)
+    WITH (
+         [name] NVARCHAR(500)
+        ,[value] NVARCHAR(500)
+        ,[fileName] NVARCHAR(500)
+        ,[length] BIGINT
+    );
+    
+    DECLARE @artist NVARCHAR(1000);
+    DECLARE @title NVARCHAR(1000);
+    DECLARE @cover_file_name NVARCHAR(1000);
+    DECLARE @cover_length BIGINT;
+    
+    SELECT TOP 1 @artist = [value] FROM @form_data
+    WHERE [name] = 'artist';
+    
+    SELECT TOP 1 @title = [value] FROM @form_data
+    WHERE [name] = 'title';
+    
+    SELECT TOP 1 
+         @cover_file_name = [file_name] 
+        ,@cover_length = [length] / 1000 -- Obtention du résultat en ko 
+    FROM @form_data
+    WHERE [name] = 'cover';
+    
+    -- On vérifie le poids de l'image
+    IF (@cover_length > 500)
+    BEGIN
+        SELECT
+             '{ "message": "Le poids de l''image que vous avez fourni doit être inférieur à 500ko" }' AS [response_body]
+            ,'application/json' AS [response_content_type] 
+            ,413 AS [response_status] -- 413 = Payload Too Large
+        ;
+    END
+
+    INSERT INTO [dbo].[albums] ([artist], [title], [cover], [cover_file_name])
+    VALUES (
+         @artist
+        ,@title
+        ,@request_form_file_cover
+        ,@cover_file_name
+    );
+    
+    SELECT 
+        204 AS [response_status]
+    ;
+END
+GO
+```
+
+:::caution
+
+Pensez à bien vérifier le poids des fichiers que vous archivez.<br/>
+Le transfert de gros fichiers **n'est pas** garanti.
+
+:::
+
+## Téléchargement de fichiers
+
+Afin de transmettre des fichiers à l'utilisateur, SQListe met à votre disposition 3 paramètres de sortie :
+- _response_file_ : permet de définir le contenu du fichier retourné (type _VARBINARY_)
+- _response_file_name_ : indique le nom du fichier (type NVARCHAR)
+- _response_file_inline_ : _BIT_ permettant d'ouvrir le fichier la visionneuse du navigateur (si disponible, sinon télécharge directement). Faux par défaut. 
+
+Exemple : 
+```sql
+-- #Route("/api/sampleFileDownload")
+-- #HttpPost("sampleFileDownload")
+CREATE OR ALTER PROCEDURE [web].[p_sample_file_download] 
+AS 
+BEGIN
+    DECLARE @file VARBINARY(MAX);
+    DECLARE @file_name NVARCHAR(255);
+    DECLARE @file_mime NVARCHAR(255);
+    DECLARE @file_inline BIT = 0;
+    
+    -- Récupération du fichier et de ses informations
+    -- ...
+
+    -- Si c'est un PDF, demande l'affichage préalable dans le navigateur, sinon télécharge directement
+    IF (@file_mime = 'application/pdf')
+        SET @file_inline = 1;
+
+    SELECT 
+         @file AS [response_file]
+        ,@file_name AS [response_file_name]
+        ,@file_inline AS [response_file_inline]
+        ,@file_mime AS [response_content_type]
+        ,200 AS [response_status]
+    ;
+END
+GO
+```

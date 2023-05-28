@@ -12,7 +12,6 @@ SQListe is a framework designed for SQL developers who want to build a web servi
 
 ## Future Developments
 
-- Support for forms
 - Oracle connector
 - Postgres connector
 - MariaDB connector

@@ -44,7 +44,7 @@ internal class SqlServerGetaway : IDatabaseGateway
                 sqlParams.Count
             );
 
-            return result?.FirstOrDefault();
+            return result?.FirstOrDefault() ?? new PipelineResponseBag();
         }
         catch (SqlException sqlException)
         {

@@ -13,7 +13,6 @@ service web piloté par une base de données.
 
 ## Évolutions futures 
 
-- Prise en charge des formulaires
 - Connecteur Oracle
 - Connecteur Postgres
 - Connecteur MariaDB

@@ -36,14 +36,16 @@ public class DatabaseMiddleware
                 .Items
                 .Select(actionDescriptor => $"/{actionDescriptor.AttributeRouteInfo?.Template}");
 
-            if (routes.Any(route => path?.Equals(route, StringComparison.InvariantCultureIgnoreCase) ?? false)) {
+            if (routes.Any(route => path?.Equals(route, StringComparison.InvariantCultureIgnoreCase) ?? false))
+            {
                 await _next(context);
                 return;
             }
 
             _logger.LogDebug("Handling request for path {Path}", context.Request.Path);
             IRequestHandler requestHandler = context.RequestServices.GetRequiredService<IRequestHandler>();
-            IPipelineModelsFactory pipelineModelsFactory = context.RequestServices.GetRequiredService<IPipelineModelsFactory>();
+            IPipelineModelsFactory pipelineModelsFactory =
+                context.RequestServices.GetRequiredService<IPipelineModelsFactory>();
 
             PipelineBag request = await pipelineModelsFactory.BuildRequestModelAsync(context.RequestAborted);
             PipelineBag response = await requestHandler.HandleRequestAsync(request, context.RequestAborted);
@@ -52,6 +54,11 @@ public class DatabaseMiddleware
         catch (RequestBodyParsingException)
         {
             context.Response.StatusCode = (int)HttpStatusCode.UnprocessableEntity;
+        }
+        catch (Exception exception)
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            _logger.LogCritical(exception: exception, "An unhandled error occured");
         }
     }
 

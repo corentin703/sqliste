@@ -10,15 +10,6 @@ public class PipelineResponseBag
 {
     [DapperColumn(SystemQueryParametersConstants.ResponseBody)]
     public string? Body { get; set; }
-    
-    [DapperColumn(SystemQueryParametersConstants.ResponseFile)]
-    public byte[]? File { get; set; }
-
-    [DapperColumn(SystemQueryParametersConstants.ResponseFileName)]
-    public string? FileName { get; set; }
-
-    [DapperColumn(SystemQueryParametersConstants.ResponseFileInline)]
-    public bool FileInline { get; set; }
 
     [DapperColumn(SystemQueryParametersConstants.ResponseCookies)]
     public string? Cookies { get; set; }
@@ -31,6 +22,19 @@ public class PipelineResponseBag
     
     [DapperColumn(SystemQueryParametersConstants.ResponseContentType)]
     public string? ContentType { get; set; }
+
+    #region Files
+
+    [DapperColumn(SystemQueryParametersConstants.ResponseFile)]
+    public byte[]? File { get; set; }
+
+    [DapperColumn(SystemQueryParametersConstants.ResponseFileName)]
+    public string? FileName { get; set; }
+
+    [DapperColumn(SystemQueryParametersConstants.ResponseFileInline)]
+    public bool FileInline { get; set; }
+
+    #endregion
 
     #region Middlewares
 

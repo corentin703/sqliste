@@ -11,7 +11,7 @@ namespace Infrastructure.UnitTests.Services;
 
 public class ProcedureResolverTests
 {
-    private ProcedureResolver _procedureResolver;
+    private readonly ProcedureResolver _procedureResolver;
 
     public ProcedureResolverTests()
     {
@@ -21,7 +21,7 @@ public class ProcedureResolverTests
         {
             Endpoints = new List<ProcedureModel>()
             {
-                new ProcedureModel()
+                new()
                 {
                       Name = "p_test",
                       Route = "/api/test",

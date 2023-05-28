@@ -19,6 +19,9 @@ public class FormDataFile : FormDataItem
 
     [JsonPropertyName("contentDisposition")]
     public string ContentDisposition { get; }
+    
+    [JsonPropertyName("fileName")]
+    public string FileName { get; }
 
     public FormDataFile(IFormFile file, byte[] content)
         : base(file.Name)
@@ -30,5 +33,6 @@ public class FormDataFile : FormDataItem
         Length = file.Length;
         ContentType = file.ContentType;
         ContentDisposition = file.ContentDisposition;
+        FileName = file.FileName;
     }
 }
