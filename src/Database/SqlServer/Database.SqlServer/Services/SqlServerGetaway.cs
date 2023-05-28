@@ -20,7 +20,8 @@ internal class SqlServerGetaway : IDatabaseGateway
         _databaseQueryService = databaseQueryService;
     }
 
-    public async Task<PipelineResponseBag?> ExecProcedureAsync(PipelineRequestBag request, ProcedureModel procedure, Dictionary<string, object?> sqlParams,
+    public async Task<PipelineResponseBag> ExecProcedureAsync(PipelineRequestBag request, ProcedureModel procedure,
+        Dictionary<string, object?> sqlParams,
         CancellationToken cancellationToken)
     {
         try

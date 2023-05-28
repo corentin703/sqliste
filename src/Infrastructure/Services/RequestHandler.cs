@@ -91,10 +91,7 @@ internal class RequestHandler : IRequestHandler
             }
 
             Dictionary<string, object?> sqlParams = await _parametersResolver.GetParamsAsync(pipeline, middleware, cancellationToken);
-            PipelineResponseBag? middlewareResponse = await _databaseGateway.ExecProcedureAsync(pipeline.Request, middleware, sqlParams, cancellationToken);
-
-            if (middlewareResponse == null)
-                continue;
+            PipelineResponseBag middlewareResponse = await _databaseGateway.ExecProcedureAsync(pipeline.Request, middleware, sqlParams, cancellationToken);
 
             pipeline.Response = MergeResponses(pipeline.Response,  middlewareResponse);
 
@@ -119,7 +116,7 @@ internal class RequestHandler : IRequestHandler
     )
     {
         Dictionary<string, object?> sqlParams = await _parametersResolver.GetParamsAsync(pipeline, procedure, cancellationToken);
-        PipelineResponseBag? response = await _databaseGateway.ExecProcedureAsync(pipeline.Request, procedure, sqlParams, cancellationToken);
+        PipelineResponseBag response = await _databaseGateway.ExecProcedureAsync(pipeline.Request, procedure, sqlParams, cancellationToken);
         pipeline.Response = MergeResponses(pipeline.Response, response);
 
         return pipeline;
