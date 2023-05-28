@@ -346,7 +346,7 @@ Le transfert de gros fichiers **n'est pas** garanti.
 
 Afin de transmettre des fichiers à l'utilisateur, SQListe met à votre disposition 3 paramètres de sortie :
 - _response_file_ : permet de définir le contenu du fichier retourné (type _VARBINARY_)
-- _response_file_name_ : indique le nom du fichier (type NVARCHAR)
+- _response_file_name_ : indique le nom du fichier (type _NVARCHAR_)
 - _response_file_inline_ : _BIT_ permettant d'ouvrir le fichier la visionneuse du navigateur (si disponible, sinon télécharge directement). Faux par défaut. 
 
 Exemple : 
