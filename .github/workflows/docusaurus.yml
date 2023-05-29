@@ -1,0 +1,40 @@
+name: Docusaurus
+
+permissions: 
+  id-token: write
+  pages: write
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: yarn
+          cache-dependency-path: ./doc/yarn.lock
+      - name: Install dependencies
+        working-directory: ./doc
+        run: yarn install --non-interactive
+      - name: Build
+        working-directory: ./doc
+        run: yarn build
+      - name: Setup Pages
+        uses: actions/configure-pages@v1
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./doc/build
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
