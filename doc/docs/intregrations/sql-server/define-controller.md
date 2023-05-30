@@ -311,3 +311,8 @@ BEGIN
 END
 GO
 ```
+
+## Applying Changes
+
+When you modify the annotations of a procedure, you need to notify SQListe that it needs to update its introspection.<br/>
+To do this, execute the `[sqliste].[p_event_trigger_web_schema_update]` procedure.

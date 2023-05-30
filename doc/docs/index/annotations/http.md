@@ -5,9 +5,9 @@ These annotations are used to define routes and their associated operations.
 
 ## #Route
 
-| Arguments    | Type    | Description                           | Optional | Default Value |
-|--------------|---------|---------------------------------------|----------|---------------|
-| Path         | string  | The URI at which the procedure is resolved | No       |               |
+| Arguments | Type   | Description                                | Optional | Default Value |
+|-----------|--------|--------------------------------------------|----------|---------------|
+| Path      | string | The URI at which the procedure is resolved | No       |               |
 
 Examples:
 ```

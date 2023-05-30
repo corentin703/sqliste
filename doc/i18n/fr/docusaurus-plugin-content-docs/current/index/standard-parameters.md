@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # Paramètres standards
 
 Voici la liste exhaustive des paramètres standards, leur direction (entrée / sortie), et à quoi ils servent.

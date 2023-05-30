@@ -378,3 +378,8 @@ BEGIN
 END
 GO
 ```
+
+## Application des modifications
+
+Lorsque vous changez les annotations d'une procédure, il faut de signaler à SQListe qu'il faut actualiser son introspection.<br/>
+Pour se faire, exécutez la procédure `[sqliste].[p_event_trigger_web_schema_update]`.

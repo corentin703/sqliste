@@ -1,4 +1,0 @@
-
-# OpenApi
-
-## Arrive bientôt...

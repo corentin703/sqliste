@@ -11,7 +11,7 @@ Un intergiciel se définie grâce à l'annotation ```#Middleware```.
 
 Exemples : 
 ```
-#Middleware(Order = 1, PathStarts = '/api')
-#Middleware(Order = 1, PathStarts = '/api', After = true)
+#Middleware(Order = 1, PathStarts = "/api")
+#Middleware(Order = 1, PathStarts = "/api", After = true)
 ```
 
