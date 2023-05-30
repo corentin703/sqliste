@@ -72,6 +72,15 @@ Le paramètre _ConsummationDelay_ définit le délai de traitement lorsqu'une no
 ### Session
 Donne un accès à certains paramètres de la session, notamment sa durée de vie (exprimée en minutes, 20 par défaut).
 
+:::caution
+
+La session se matérialise par un emplacement mémoire réservé à un utilisateur sur le serveur, et donc non disponible pour d'autres utilisations.<br/>
+Si vous avez besoin de cette fonctionnalité, il est généralement recommandé de ne pas mettre une durée de vie trop importante, notamment en cas de fort trafic.<br/>
+En effet, plus il y aura d'utilisateurs, plus il y aura de mémoire consommée.<br/>
+Faites aussi attention à la quantité d'informations stockées par vos procédures.
+
+:::
+
 ### Base de données
 Cette section peut varier selon le SGBD que vous utilisez (cf. la section correspondante).<br/>
 Cependant, nous retrouverons toujours le type de SGBD, la chaîne de connexion à celui-ci, ainsi que les paramètres de migration.
