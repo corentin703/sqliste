@@ -6,10 +6,12 @@ namespace Sqliste.Server.Cli;
 public class CliApplication
 {
     private readonly SwaggerCommandHandler _swaggerCommandHandler;
+    private readonly DatabaseMigrationCommandHandler _databaseMigrationCommandHandler;
 
-    public CliApplication(SwaggerCommandHandler swaggerCommandHandler)
+    public CliApplication(SwaggerCommandHandler swaggerCommandHandler, DatabaseMigrationCommandHandler databaseMigrationCommandHandler)
     {
         _swaggerCommandHandler = swaggerCommandHandler;
+        _databaseMigrationCommandHandler = databaseMigrationCommandHandler;
     }
 
     public async Task RunAsync(string[] args)
@@ -20,16 +22,15 @@ public class CliApplication
         };
 
         AddSwaggerCommand(rootCommand);
+        AddMigrationCommand(rootCommand);
         
-        // Command sub1aCommand = new("sub1a", "Second level subcommand");
-        // swaggerCommand.Add(sub1aCommand);
-
         await rootCommand.InvokeAsync(args);
     }
 
-    public void AddSwaggerCommand(RootCommand rootCommand)
+    private void AddSwaggerCommand(RootCommand rootCommand)
     {
         Command swaggerCommand = new("swagger", "Generate swagger json");
+        swaggerCommand.AddAlias("s");
 
         #region OutputOption
 
@@ -52,5 +53,18 @@ public class CliApplication
         }, outputOption);
         
         rootCommand.Add(swaggerCommand);
+    }
+
+    private void AddMigrationCommand(RootCommand rootCommand)
+    {
+        Command migrationCommand = new("migrate", "Migrate the database");
+        migrationCommand.AddAlias("m");
+        
+        migrationCommand.SetHandler(async () =>
+        {
+            await _databaseMigrationCommandHandler.HandleAsync();
+        });
+        
+        rootCommand.Add(migrationCommand);
     }
 }

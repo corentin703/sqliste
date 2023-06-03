@@ -9,6 +9,7 @@ public static class CliExtensions
     {
         services.AddScoped<CliApplication>();
         services.AddScoped<SwaggerCommandHandler>();
+        services.AddScoped<DatabaseMigrationCommandHandler>();
         
         return services;
     }

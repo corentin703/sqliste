@@ -1,5 +1,4 @@
 using Serilog;
-using Sqliste.Database.Common.Extensions.Host;
 using Sqliste.Infrastructure.Extensions.Host;
 using Sqliste.Infrastructure.Extensions.ServiceCollection;
 using Sqliste.Server.Cli;
@@ -82,7 +81,7 @@ public class Program
         app.UseMiddleware<DatabaseMiddleware>();
         app.MapControllers();
 
-        await app.RunMigrationsAsync();
+        // await app.RunMigrationsAsync();
         await app.RunInitialIntrospectionAsync();
 
         app.UseDatabaseEventWatcher();

@@ -13,7 +13,7 @@ public static class LoggerExtensions
                 .ReadFrom.Configuration(context.Configuration)
                 .ReadFrom.Services(services)
                 .Enrich.FromLogContext()
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} - {Level} ({SourceContext})] {Message}{NewLine}{Exception}")
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} - {Level:u3} ({SourceContext})] {Message}{NewLine}{Exception}")
         );
         
         return builder;
