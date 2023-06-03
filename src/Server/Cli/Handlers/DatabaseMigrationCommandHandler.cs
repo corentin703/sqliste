@@ -13,9 +13,10 @@ public class DatabaseMigrationCommandHandler
         _logger = logger;
     }
 
-    public async Task HandleAsync()
+    public Task HandleAsync()
     {
         _migrationService.Migrate();
         _logger.LogInformation("Database migrated with success");
+        return Task.CompletedTask;
     }
 }
