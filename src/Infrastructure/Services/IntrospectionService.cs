@@ -1,7 +1,9 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Net;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Sqliste.Core.Contracts;
 using Sqliste.Core.Contracts.Services;
 using Sqliste.Core.Exceptions.Procedures;
 using Sqliste.Core.Models.Http;
@@ -134,7 +136,7 @@ internal class IntrospectionService : IIntrospectionService
         CancellationToken cancellationToken = default
     )
     {
-        procedure.Annotations = SqlAnnotationParser.ParseSqlString(procedure.Content);
+        SetupAnnotations(procedure);
         procedure.Arguments = await _databaseGateway.QueryProceduresParamsAsync(procedure.Name, cancellationToken);
         SetupRoutePattern(procedure);
         SetupQueryParams(procedure);
@@ -142,6 +144,25 @@ internal class IntrospectionService : IIntrospectionService
         SetupContentType(procedure);
     }
 
+    private void SetupAnnotations(ProcedureModel procedure)
+    {
+        List<ISqlAnnotation> annotations = SqlAnnotationParser.ParseSqlString(procedure.Content);
+        List<ISqlAnnotation> validatedAnnotations = new();
+        
+        annotations.ForEach(annotation =>
+        {
+            if (!annotation.IsValid())
+            {
+                _logger.LogWarning("Annotation {AnnotationType} isn't valid", annotation.GetType());
+                return;
+            }
+            
+            validatedAnnotations.Add(annotation);
+        });
+
+        procedure.Annotations = validatedAnnotations;
+    }
+    
     private void SetupQueryParams(ProcedureModel procedure)
     {
         foreach (ProcedureArgumentModel argument in procedure.Arguments)
